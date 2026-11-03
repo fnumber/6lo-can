@@ -82,7 +82,7 @@ Table of Contents
      5.10. IPv6 Address Mapping
        5.10.1.  Unicast Address Mapping
        5.10.2.  Multicast Address Mapping
-     5.11. Frame Format
+     5.11. 6LoCAN Frame Format
    6.  Ethernet Border Translator
    7.  Internet Connectivity Scenarios
    8.  IANA Considerations
@@ -100,12 +100,13 @@ Table of Contents
    automotive domain.  However, it is also used in industrial
    applications as CANopen, building automation and many more.
 
-   It is a two-wire wired-AND multi-master bus that uses CSMA/CR in its
+   It is a two-wire, wired-AND, multi-master bus that uses Carrier Sense
+   Multiple Access with Collision Resolution (CSMA/CR) in its
    arbitration field.  CAN uses 11-bit (standard ID) and 29-bit
    (extended ID) identifiers to identify frames.  The arbitration field
    also incorporates a Remote Transmission Request (RTR), marking a
    frame as an RTR-frame.  The maximum payload data size is 8 octets for
-   classical CAN and 64 octets for CAN-FD.
+   classical CAN and 64 octets for CAN with Flexible Data-Rate (CAN FD).
 
    The minimal MTU of IPv6 is 1280 octets, and therefore, a mechanism to
    support a larger payload is needed.  This document uses a slightly
@@ -539,13 +540,15 @@ Table of Contents
    one.
 
    [RFC8064] recommends that stable IIDs be generated with the method of
-   [RFC7217] rather than from a link-layer address.  The link-local IID
-   defined above is a deliberate deviation from that recommendation,
-   made for the header compression reason given above; its privacy
-   properties are discussed in Section 9.  For addresses other than
-   link-local addresses, a 6LoCAN node SHOULD generate IIDs as described
-   in [RFC7217].  Such IIDs cannot be rebuilt with DEVIID or APPIID and
-   are carried as part of the compression residue.
+   [RFC7217] rather than from a link-layer address, and [RFC8065] gives
+   the privacy advice that an adaptation-layer specification such as
+   this one is expected to follow.  The link-local IID defined above is
+   a deliberate deviation from that recommendation, made for the header
+   compression reason given above; its privacy properties are discussed
+   in Section 9.  For addresses other than link-local addresses, a
+   6LoCAN node SHOULD generate IIDs as described in [RFC7217].  Such
+   IIDs cannot be rebuilt with DEVIID or APPIID and are carried as part
+   of the compression residue.
 
 5.5.  IPv6 Link-Local Address
 
@@ -733,7 +736,7 @@ Table of Contents
    used for multicast frames without its flow control mechanism; see
    Section 4.1 and Section 5.9.
 
-5.11.  Frame Format
+5.11.  6LoCAN Frame Format
 
    This section provides information about data arrangement in the frame
    data field.
@@ -924,8 +927,11 @@ Table of Contents
 
 9.  Security Considerations
 
-   This document doesn't provide any security mechanisms.  Traffic on
-   the bus can be intercepted, spoofed, or destroyed.  For
+   CAN itself provides no security services at the link layer: it has no
+   authentication, no integrity protection and no confidentiality, and
+   any node on the bus can transmit any frame identifier.  This document
+   adds none.  Traffic on the bus can therefore be intercepted, spoofed,
+   or destroyed by any node attached to the segment.  For
    confidentiality and integrity, mechanisms like TLS or IPsec need to
    be applied.
 
@@ -945,6 +951,14 @@ Table of Contents
    exhaustively in a short time.  The size of the address space
    therefore provides no protection against discovery of the nodes
    present on a bus segment.
+
+   [RFC8065] discusses how privacy threats apply to IPv6-over-foo
+   adaptation layers and what such a specification is expected to say
+   about them.  Of the threats it lists, correlation of activity over
+   time and location tracking are the ones that the node-address-derived
+   interface identifier of Section 5.4 bears on, and they are the reason
+   that identifier is confined to link-local addresses.  Address
+   scanning is not mitigated, as noted above.
 
 10.  References
 
@@ -1000,6 +1014,10 @@ Table of Contents
               "Recommendation on Stable IPv6 Interface Identifiers",
               RFC 8064, DOI 10.17487/RFC8064, February 2017,
               <https://www.rfc-editor.org/rfc/rfc8064>.
+
+   [RFC8065]  Thaler, D., "Privacy Considerations for IPv6 Adaptation-
+              Layer Mechanisms", RFC 8065, DOI 10.17487/RFC8065,
+              February 2017, <https://www.rfc-editor.org/rfc/rfc8065>.
 
    [RFC8200]  Deering, S. and R. Hinden, "Internet Protocol, Version 6
               (IPv6) Specification", STD 86, RFC 8200,
@@ -1100,6 +1118,13 @@ Changes from draft-pjs-6lo-can-00
       are now specified; see Section 5.3.4.
 
    *  The affiliation of the first author has been removed.
+
+   *  Comments from the review of draft-wachter-6lo-can-01 on the 6lo
+      list have been addressed: [RFC8065] is now taken into account in
+      Section 5.4 and Section 9, Section 9 now states that CAN provides
+      no security services at the link layer, Section 5.11 has been
+      renamed, and the CSMA/CR and CAN FD abbreviations are now expanded
+      on first use.
 
 Authors' Addresses
 
