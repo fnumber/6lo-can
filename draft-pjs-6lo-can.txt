@@ -1,0 +1,1117 @@
+
+
+
+
+6lo                                                           A. Wachter
+Internet-Draft                                                          
+Intended status: Standards Track                            J. Park, Ed.
+Expires: 7 May 2027                                                 ETRI
+                                                         3 November 2026
+
+
+       Transmission of IPv6 Packets over Controller Area Network
+                        draft-pjs-6lo-can-latest
+
+Abstract
+
+   Controller Area Network (CAN) is a fieldbus initially designed for
+   automotive applications.  It has since been adopted for use in
+   various industrial applications, such as CANopen and building
+   automation systems.  CAN operates as a multi-master bus with frame
+   identifiers of 11 bits or 29 bits.  The CAN standard, defined in the
+   ISO 11898 series, specifies both the physical and data-link layers.
+   This document describes how to transfer IPv6 packets over CAN using
+   ISO-TP, a dedicated addressing scheme for CAN nodes, and Static
+   Context Header Compression (SCHC).
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 7 May 2027.
+
+Copyright Notice
+
+   Copyright (c) 2026 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+Table of Contents
+
+   1.  Introduction
+   2.  Applicability
+   3.  Conventions and Terminology
+   4.  Controller Area Network Overview
+     4.1.  ISO-TP Overview
+   5.  Specification of IPv6 over CAN
+     5.1.  CAN FD Requirement
+     5.2.  Protocol Stack
+     5.3.  CAN Frame Identifiers
+       5.3.1.  Unicast Frame Identifier
+       5.3.2.  Multicast Frame Identifier
+       5.3.3.  Node Address Generation
+       5.3.4.  Link-Layer Duplicate Address Detection
+     5.4.  Stateless Address Autoconfiguration
+     5.5.  IPv6 Link-Local Address
+     5.6.  Neighbor Discovery
+     5.7.  Header Compression
+       5.7.1.  SCHC Context
+       5.7.2.  Rule Identifiers
+       5.7.3.  Relationship to SCHC over IEEE 802.15.4
+     5.8.  Maximum Transmission Unit
+     5.9.  Fragmentation and Reassembly Considerations
+     5.10. IPv6 Address Mapping
+       5.10.1.  Unicast Address Mapping
+       5.10.2.  Multicast Address Mapping
+     5.11. Frame Format
+   6.  Ethernet Border Translator
+   7.  Internet Connectivity Scenarios
+   8.  IANA Considerations
+   9.  Security Considerations
+   10. References
+     10.1.  Normative References
+     10.2.  Informative References
+   Acknowledgements
+   Changes from draft-pjs-6lo-can-00
+   Authors' Addresses
+
+1.  Introduction
+
+   Controller Area Network (CAN) is mostly known for its use in the
+   automotive domain.  However, it is also used in industrial
+   applications as CANopen, building automation and many more.
+
+   It is a two-wire wired-AND multi-master bus that uses CSMA/CR in its
+   arbitration field.  CAN uses 11-bit (standard ID) and 29-bit
+   (extended ID) identifiers to identify frames.  The arbitration field
+   also incorporates a Remote Transmission Request (RTR), marking a
+   frame as an RTR-frame.  The maximum payload data size is 8 octets for
+   classical CAN and 64 octets for CAN-FD.
+
+   The minimal MTU of IPv6 is 1280 octets, and therefore, a mechanism to
+   support a larger payload is needed.  This document uses a slightly
+   modified version of the ISO-TP protocol ([ISO15765-2]) to transfer
+   data up to 4095 octets per packet.  Mapping addresses to identifiers
+   uses an addressing scheme with a 14-bit source address, a 14-bit
+   destination address, and a multicast bit.  This scheme uses extended
+   identifiers only.
+
+   To make data transfer more efficient, headers are compressed with
+   SCHC [RFC8724].
+
+   Due to the limited address space of 14 bits, random address
+   generation would generate duplicate addresses with an unacceptably
+   high probability.  For this reason, a link-layer duplicate address
+   detection is introduced to resolve address conflicts.
+
+   An Ethernet border translator is designed to connect a 6LoCAN bus
+   segment to other networks.
+
+2.  Applicability
+
+   CAN is used in domains other than the automotive one it was designed
+   for.  Two properties recur in those domains: a bus that is already
+   installed and certified as part of the equipment, and devices that
+   are increasingly expected to be reachable from an IP network for
+   monitoring, configuration or software update.
+
+   Elevators are an example.  An elevator installation uses CAN to
+   connect the controller with the car, the door operator and the
+   landing stations.  The bus is specified as part of the installation
+   and cannot be replaced without re-certifying it, while the same
+   installation is expected to report its state to a building management
+   system or to a remote maintenance service.  Such connectivity is
+   commonly provided by a gateway that translates a vendor-specific CAN
+   protocol into an IP protocol, and that translation has to be provided
+   for each combination of equipment and management system.
+
+   Running IPv6 on the existing CAN bus removes that per-combination
+   translation.  The controller, the car and the landing stations become
+   IPv6 nodes that a management system addresses in the same way as any
+   other node, and the Ethernet Border Translator (see Section 6) is the
+   only element that has to be adapted to the building network.  The
+   same reasoning applies to other installations that use CAN for their
+   internal communication, such as CANopen machinery and building
+   automation.
+
+   6LoCAN assumes a single bus segment with a modest number of nodes
+   that are powered from the installation rather than battery operated,
+   and traffic that consists mostly of small messages.  It is not
+   intended for installations that need the throughput of Ethernet, nor
+   for battery-operated nodes that need the duty-cycling support of
+   [RFC6775] and [RFC8505].
+
+3.  Conventions and Terminology
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in BCP
+   14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+   This specification requires readers to be familiar with all the terms
+   and concepts that are discussed in "IPv6 Stateless Address
+   Autoconfiguration" [RFC4862], "IPv6 over Low-Power Wireless Personal
+   Area Networks (6LoWPANs): Overview, Assumptions, Problem Statement,
+   and Goals" [RFC4919], "Transmission of IPv6 Packets over IEEE
+   802.15.4 Networks" [RFC4944], "Neighbor Discovery Optimization for
+   IPv6 over Low-Power Wireless Personal Area Networks (6LoWPANs)"
+   [RFC6775], and "SCHC: Generic Framework for Static Context Header
+   Compression and Fragmentation" [RFC8724].
+
+   6LoWPAN Node (6LN):  A 6LoWPAN node is any host or router
+      participating in a LoWPAN.  This term is used when referring to
+      situations in which either a host or router can play the role
+      described.
+
+   6LoWPAN Router (6LR):  An intermediate router in the LoWPAN that is
+      able to send and receive Router Advertisements (RAs) and Router
+      Solicitations (RSs), as well as forward and route IPv6 packets.
+      6LoWPAN Routers are present only in route-over topologies.
+
+   6LoWPAN Border Router (6LBR):  A border router located at the
+      junction of separate 6LoWPAN networks or between a 6LoWPAN network
+      and another IP network.  There may be one or more 6LBRs at the
+      6LoWPAN network boundary.  A 6LBR is the responsible authority for
+      IPv6 prefix propagation for the 6LoWPAN network it is serving.  An
+      isolated LoWPAN also contains a 6LBR in the network that provides
+      the prefix(es) for the isolated network.
+
+   Duplicate Address Detection (DAD):  A mechanism used in IPv6 networks
+      to ensure that no two devices share the same address, preventing
+      address conflicts.
+
+   Static Context Header Compression and fragmentation (SCHC):  A header
+      compression and fragmentation framework defined in [RFC8724].  It
+      relies on a context that is known to both endpoints before a
+      packet is sent, and elides the header fields whose values can be
+      derived from that context.
+
+4.  Controller Area Network Overview
+
+   This section provides a brief overview of Controller Area Network
+   (CAN), as specified in [ISO11898-1] and [ISO11898-2].  CAN has two
+   wires, CAN High and CAN Low. When a dominant (0) bit is transmitted,
+   CAN High is driven to a higher voltage than CAN Low, so that the
+   differential voltage between the two wires is nominally 2V.  Both
+   wires are at approximately the same level when a recessive (1) bit is
+   transmitted, so that the differential voltage is nominally 0V.
+   [ISO11898-2] specifies the voltage levels.  Because of the wired-AND
+   structure, a dominant bit overrides a recessive bit.  The CAN
+   specification does not define any structure for the identifier.
+
+   To resolve collisions in the arbitration field, a CAN controller
+   checks for overridden recessive bits.  The sender that was sending
+   the recessive bit then stops the transmission.  Therefore an
+   identifier with all zeros has the highest priority.
+
+   CAN controllers are usually able to filter frames by identifiers and
+   only pass frames where the filter matches.  The identifiers can be
+   masked in order to define which bits of the identifier must match and
+   which ones are ignored.
+
+4.1.  ISO-TP Overview
+
+   This section provides information about the use of ISO-TP
+   ([ISO15765-2]) in this document.  Parts of ISO-TP are used to provide
+   a reliable way for sending up to 4095 octets as a packet.  It
+   includes a flow-control mechanism for unicast-packets and timeouts.
+
+   Multicast packets do not use any flow-control mechanism and are
+   therefore not covered by the ISO-TP standard.  However, the
+   fragmentation and reassembly mechanism is still used for multicast
+   packets.
+
+   ISO-TP defines four different types of frames: Single-Frames (SF),
+   First-Frames (FF), Consecutive-Frames (CF), and Flow Control Frames
+   (FC).  Single-Frames are used when the payload data size is small
+   enough to fit into a single CAN frame.  For larger payload data
+   sizes, a First-Frame indicates the start of the message, Consecutive-
+   Frames carry the payload data and Flow Control Frames steer the
+   transmission.  Network address extension and packet size larger than
+   4095 octets defined by ISO 15765-2 MUST NOT be used for 6LoCAN.  The
+   8-octet payload of a classical CAN frame is too small to carry a
+   compressed IPv6 header together with the ISO-TP header, whereas the
+   64-octet payload of a CAN FD frame allows a small packet to be
+   carried in a single Single-Frame. 6LoCAN therefore requires the CAN
+   FD frame format; see Section 5.1.
+
+5.  Specification of IPv6 over CAN
+
+   CAN has a small frame payload and therefore does not tolerate much
+   protocol overhead.  This section specifies link-local IPv6 addresses
+   and stateless IPv6 address autoconfiguration (see Section 5.4 and
+   Section 5.5), Neighbor Discovery (see Section 5.6), header
+   compression (see Section 5.7) and fragmentation (see Section 5.9),
+   following the 6LoWPAN work of [RFC4944] and [RFC6775] where it
+   applies to CAN.
+
+5.1.  CAN FD Requirement
+
+   A 6LoCAN node MUST support the CAN FD frame format specified in
+   [ISO11898-1], and 6LoCAN packets MUST be carried in CAN FD frames.
+
+   The reason is the payload size.  A classical CAN frame carries at
+   most 8 octets, of which the ISO-TP header already takes 1 to 3; what
+   remains cannot hold a compressed IPv6 header, so every packet would
+   have to be fragmented.  A CAN FD frame carries up to 64 octets, which
+   allows a small packet to be carried complete in a single ISO-TP
+   Single-Frame.
+
+   6LoCAN does not use classical CAN frames, and it does not use remote
+   frames in either frame format (see Section 5.3.4).
+
+5.2.  Protocol Stack
+
+   Figure 1 illustrates the IPv6-over-CAN protocol stack.  Upper-layer
+   protocols can be transport-layer protocols (e.g., TCP and UDP),
+   application-layer protocols, and other protocols capable of running
+   on top of IPv6.
+
+   +----------------------------------------+
+   |     Upper-Layer Protocols (CANopen)    |
+   +----------------------------------------+
+   |                 IPv6                   |
+   +----------------------------------------+
+   |   Adaptation Layer for IPv6 over CAN   |
+   +----------------------------------------+
+   |   ISO-TP     |   CAN Data Link Layer   |
+   +----------------------------------------+
+   |           CAN Physical Layer           |
+   +----------------------------------------+
+
+                 Figure 1: Protocol Stack for IPv6 over CAN
+
+   The Adaptation Layer for IPv6 over CAN supports Neighbor Discovery,
+   stateless address autoconfiguration, header compression and
+   fragmentation and reassembly.  Unlike the 6LoWPAN header compression
+   of [RFC6282], which compresses the IPv6 header and a small set of
+   next headers, SCHC compresses any header for which the context holds
+   a rule, so the compression is not limited to a fixed set of upper-
+   layer protocols.
+
+5.3.  CAN Frame Identifiers
+
+   This section provides information about the 14-bit node address to
+   CAN identifier mapping.
+
+   Because CAN uses identifiers to identify the frame's content, an
+   addressing scheme is introduced to map node addresses to identifiers.
+   Every node has a unique 14-bit address.  This address is assigned
+   either statically or randomly.  The addressing scheme uses the 29-bit
+   extended identifier only.  It is a combination of a source address, a
+   destination address, and a multicast bit.  The multicast bit is at
+   the highest bit-position, which causes the multicast traffic to have
+   the lowest priority on the bus.
+
+   The address 0x3DFE is reserved for link-layer duplicate address
+   detection, and address 0x3DF0 is reserved for the Ethernet border
+   translator.  Addresses from 0x0100 to 0x3DEF are used as node
+   addresses.  Other addresses (0x0000 to 0x00FF and 0x3DF0 to 0x3FFF)
+   are reserved or used for special purposes.  Note that a lower address
+   number has a higher priority on the bus.
+
+   The ranges listed in Table 1 apply to node addresses, that is, to the
+   source address of every frame and to the destination address of
+   unicast frames (see Section 5.3.1).  They do not apply to the
+   destination address of multicast frames: that field carries the low-
+   order 14 bits of the multicast group as specified in Section 5.3.2,
+   and the multicast bit distinguishes such a value from a node address.
+
+   6LoCAN does not use the 11-bit standard identifiers.  They may be
+   used for other purposes.
+
+                 +=================+=====================+
+                 | Address         | Description         |
+                 +=================+=====================+
+                 | 0x3DFF - 0x3FFF | Reserved            |
+                 +-----------------+---------------------+
+                 | 0x3DFE          | LLDAD               |
+                 +-----------------+---------------------+
+                 | 0x3DF1 - 0x3DFD | Reserved            |
+                 +-----------------+---------------------+
+                 | 0x3DF0          | Ethernet Translator |
+                 +-----------------+---------------------+
+                 | 0x0100 - 0x3DEF | Node addresses      |
+                 +-----------------+---------------------+
+                 | 0x0000 - 0x00FF | Reserved            |
+                 +-----------------+---------------------+
+
+                        Table 1: Node address ranges
+
+    0|0            1|1            2|
+    0|1            4|5            8|
+   +-+--------------+--------------+
+   |M|     DEST     |     SRC      |
+   +-+--------------+--------------+
+
+                         Figure 2: Frame Identifier
+
+   M:  Multicast.
+
+   DEST:  Destination Address (14 bits).
+
+   SRC:  Source Address (14 bits).
+
+   For example, a destination of 0x3055 and source address of 0x3AAF
+   result in the following identifier:
+
+    0|0            1|1            2|
+    0|1            4|5            8|
+   +-+--------------+--------------+
+   |0|11000001010101|11101010101111|
+   +-+--------------+--------------+
+
+                 Figure 3: Unicast frame identifier example
+
+   A multicast group of 1 and a source address of 0x3AAF result in the
+   following identifier:
+
+    0|0            1|1            2|
+    0|1            4|5            8|
+   +-+--------------+--------------+
+   |1|00000000000001|11101010101111|
+   +-+--------------+--------------+
+
+                Figure 4: Multicast frame identifier example
+
+5.3.1.  Unicast Frame Identifier
+
+   For unicast packets, the multicast bit is set to zero, and the 14-bit
+   source address is the address of the sender.  The 14-bit destination
+   address of the receiver is discovered by IPv6 NDP defined in
+   [RFC4861].  Every node MUST be able to receive all frames targeting
+   its address as the destination address.
+
+5.3.2.  Multicast Frame Identifier
+
+   For multicast packets, the multicast bit is set to one, and the
+   14-bit source address is the address of the sender.  The 14-bit
+   destination address is the last 14 bits of the multicast group.
+   Every node MUST be able to receive all frames matching the last 14
+   bits of all joined multicast groups as the destination address.
+
+5.3.3.  Node Address Generation
+
+   Every node has a 14-bit address.  This address MUST be unique within
+   the CAN bus segment.  The address can either be statically defined or
+   assigned randomly.  For the random address assignment, the node tries
+   randomly chosen addresses until the link-layer duplicate address
+   detection succeeds.  The link-layer duplicate address detection
+   prevents nodes from assigning an address already in use.
+
+5.3.4.  Link-Layer Duplicate Address Detection
+
+   This section provides information about how to perform link-layer
+   duplicate address detection (LLDAD).
+
+   LLDAD is introduced to prevent collisions of CAN identifiers and
+   makes it possible to use random address assignment with only 14 bits
+   of address space.  To perform an LLDAD, a LLDAD-request is sent.  If
+   no DAD-response is received, the LLDAD is considered successful and
+   the node may start using the candidate address.
+
+   An LLDAD-request is a frame with a data length of zero whose
+   destination address is the candidate address and whose source address
+   is a randomly chosen 14-bit value.  A DAD-response is a frame with a
+   data length of zero whose destination address is the LLDAD address
+   (0x3DFE) and whose source address is the address that is already in
+   use.
+
+   A data length of zero identifies both frames.  A 6LoCAN packet always
+   starts with an ISO-TP header of at least one octet (see
+   Section 5.11), so a frame with no data cannot be mistaken for one.
+   Earlier versions of this specification used remote frames for the
+   LLDAD-request.  Remote frames are not used, because the CAN FD frame
+   format does not provide them and because support for them in
+   classical CAN controllers is uneven.
+
+   The random source address of an LLDAD-request distinguishes requests
+   that are sent for the same candidate address at the same time.  It is
+   not a node address, and the ranges in Table 1 do not apply to it.
+
+   A node MUST be able to receive frames whose destination address is
+   the candidate address before it sends the first LLDAD-request, and
+   frames whose destination address is the LLDAD address for as long as
+   an LLDAD is in progress.  The ability to receive frames addressed to
+   the node address MUST be retained for as long as the node uses that
+   address, so that the node can answer later LLDAD requests for it.
+
+   A node that receives an LLDAD-request whose destination address is an
+   address it already uses MUST send a DAD-response within 100 ms of
+   receiving the request.
+
+   A node performing an LLDAD MUST wait at least 100 ms for a DAD-
+   response.  The 100 ms value allows a responding node to be scheduled
+   and to win bus arbitration on a loaded bus; it is not derived from a
+   CAN timing parameter.
+
+   While an LLDAD is in progress, a node that receives an LLDAD-request
+   whose destination address is its own candidate address, and whose
+   source address differs from the one it used itself, MUST abandon the
+   candidate address.  This resolves the case of two nodes probing the
+   same address at the same time, which neither would otherwise detect,
+   because a DAD-response is sent only by a node that already uses the
+   address.
+
+   A node whose LLDAD fails, or that abandons a candidate address under
+   the rule above, MUST select a new candidate address and repeat the
+   procedure.  A node that selects candidate addresses randomly MUST
+   choose each new candidate independently from the node address range
+   of Table 1, and SHOULD delay the next attempt by a random interval of
+   up to 100 ms, so that two nodes that collided do not collide again.
+   An implementation SHOULD limit the number of attempts and report a
+   failure to configure a node address rather than retrying
+   indefinitely.
+
+   Figure 5 shows a DAD Fail example where node A performs a LLDAD-
+   request on address 0x3055 where this address is already in use by
+   node B.
+
+       Node A            Node B
+          |--LLDAD-request->|
+          |                 |
+          |<-LLDAD-response-|
+
+   LLDAD-request identifier (data length zero):
+    0|0            1|1            2|
+    0|1            4|5            8|
+   +-+--------------+--------------+
+   |0|11000001010101|    random    |
+   +-+--------------+--------------+
+
+   DAD-response identifier (data length zero):
+    0|0            1|1            2|
+    0|1            4|5            8|
+   +-+--------------+--------------+
+   |0|11110111111110|11000001010101|
+   +-+--------------+--------------+
+
+                         Figure 5: DAD Fail example
+
+5.4.  Stateless Address Autoconfiguration
+
+   This section defines how to obtain an IPv6 Interface Identifier.
+
+   The Interface Identifier for link-local addresses SHOULD be formed by
+   taking the node address and zero filling it to the left.  The
+   resulting value is an IID in the sense of [RFC7136] and carries no
+   embedded meaning beyond the node address.  For example, an address of
+   hexadecimal value 0x3AAF results in the following IID:
+
+   |0              1|1              3|3              4|4              6|
+   |0              5|6              1|2              7|8              3|
+   +----------------+----------------+----------------+----------------+
+   |0000000000000000|0000000000000000|0000000000000000|0011101010101111|
+   +----------------+----------------+----------------+----------------+
+
+                     Figure 6: IID from Address 0x3AAF
+
+   Deriving the IID from the node address allows a SCHC rule to elide
+   it.  [RFC8724] defines the DEVIID and APPIID compression/
+   decompression actions, which rebuild an interface identifier from the
+   device identifier of the link.  On a 6LoCAN segment that identifier
+   is the node address, which the receiver already has from the CAN
+   frame identifier of the frame it is processing.  An IID that cannot
+   be rebuilt in this way has to be sent as part of the compression
+   residue, which costs 8 octets in every packet that carries it.  On a
+   link whose frames carry at most 64 octets of payload, this is the
+   difference between a usefully compressed header and an uncompressed
+   one.
+
+   [RFC8064] recommends that stable IIDs be generated with the method of
+   [RFC7217] rather than from a link-layer address.  The link-local IID
+   defined above is a deliberate deviation from that recommendation,
+   made for the header compression reason given above; its privacy
+   properties are discussed in Section 9.  For addresses other than
+   link-local addresses, a 6LoCAN node SHOULD generate IIDs as described
+   in [RFC7217].  Such IIDs cannot be rebuilt with DEVIID or APPIID and
+   are carried as part of the compression residue.
+
+5.5.  IPv6 Link-Local Address
+
+   The IPv6 link-local address [RFC4291] for a 6LoCAN interface is
+   formed by appending the Interface Identifier, as defined above, to
+   the prefix FE80::/64.
+
+     10 bits            54 bits                  64 bits
+   +----------+-----------------------+----------------------------+
+   |1111111010|         (zeros)       |    Interface Identifier    |
+   +----------+-----------------------+----------------------------+
+
+                   Figure 7: Link-Local address from IID
+
+5.6.  Neighbor Discovery
+
+   A 6LoCAN bus segment is a single link.  Every node attached to the
+   segment can reach every other node of that segment directly, and
+   nodes do not forward packets between each other within a segment.
+
+   Neighbor Discovery for IPv6 [RFC4861] is used for address resolution
+   and for neighbor unreachability detection.  The Source/Target Link-
+   Layer Address option carries the 14-bit node address in the form
+   specified in Section 5.10.1.
+
+   The Neighbor Discovery optimizations for 6LoWPANs [RFC6775] [RFC8505]
+   address route-over, multi-hop topologies in which multicast is
+   expensive or unreliable.  Because a 6LoCAN segment is a single link
+   and CAN provides a multicast mechanism (see Section 5.3.2), these
+   optimizations are not required within a segment.  Connectivity
+   between a 6LoCAN segment and other links is provided by the Ethernet
+   Border Translator (see Section 6) rather than by a 6LBR.
+
+5.7.  Header Compression
+
+   6LoCAN uses Static Context Header Compression (SCHC) [RFC8724] to
+   compress headers.  A 6LoCAN node MUST implement the SCHC compression
+   and decompression of [RFC8724].
+
+   Only the compression part of [RFC8724] is used.  The SCHC
+   fragmentation and reassembly mechanism is not used; fragmentation is
+   provided by ISO-TP, for the reasons given in Section 5.9.
+
+   Earlier versions of this specification used the 6LoWPAN header
+   compression of [RFC6282].  SCHC is used instead because it compresses
+   the headers of the upper-layer protocols that a 6LoCAN node actually
+   carries, not only the IPv6 header, and because a rule set can be
+   written for the small and largely static set of flows that an
+   installation of the kind described in Section 2 runs.  [RFC6282] is
+   not used by this specification.
+
+5.7.1.  SCHC Context
+
+   SCHC compresses a header by matching it against a rule in a context
+   that both ends hold before a packet is sent.  On a 6LoCAN segment the
+   context is a property of the installation: the set of flows is fixed
+   when the equipment is commissioned.
+
+   How the context is provisioned is out of scope for this document.  It
+   MAY be built into the nodes, provisioned together with the node
+   addresses, or distributed by the Ethernet Border Translator of
+   Section 6.
+
+   All nodes on a bus segment, and the Ethernet Border Translator, MUST
+   hold the same context. 6LoCAN provides no mechanism to negotiate or
+   to verify a context, and a node that decompresses a packet with a
+   rule other than the one used to compress it will deliver a corrupted
+   packet.
+
+5.7.2.  Rule Identifiers
+
+   The Rule ID size is a parameter of the context.  For 6LoCAN it MUST
+   be 8 bits.
+
+   An 8-bit Rule ID costs one octet in every compressed packet and
+   allows 256 rules in a segment, which is more than the number of
+   distinct flows expected in the installations of Section 2.  A smaller
+   Rule ID would not save an octet, because the compression residue is
+   octet-aligned in the frame layout of Section 5.11.
+
+   The assignment of rules to Rule IDs is part of the context and
+   therefore out of scope.
+
+5.7.3.  Relationship to SCHC over IEEE 802.15.4
+
+   [I-D.ietf-6lo-schc-15dot4] profiles SCHC for IEEE 802.15.4.  The
+   parts of that profile that concern the compression of IPv6 and UDP
+   headers apply unchanged to 6LoCAN.  The parts that concern SCHC
+   fragmentation do not apply, because 6LoCAN fragments with ISO-TP.
+
+5.8.  Maximum Transmission Unit
+
+   IPv6 requires every link to have an MTU of 1280 octets or greater
+   [RFC8200].  The subset of ISO-TP used in this document (see
+   Section 5.9) carries up to 4095 octets per packet and therefore
+   satisfies this requirement.
+
+   The MTU of a 6LoCAN bus segment MUST be at least 1280 octets and MUST
+   NOT exceed 4095 octets.  Implementations SHOULD use an MTU of 1280
+   octets.  All nodes attached to the same bus segment MUST use the same
+   MTU; 6LoCAN provides no mechanism to negotiate the MTU on a per-node
+   basis.
+
+   A larger MTU increases the reassembly buffer that every receiving
+   node has to provide and the number of CAN frames that a single IPv6
+   packet occupies.  Because ISO-TP transfers are interleaved with other
+   bus traffic at frame granularity, a long transfer does not block
+   frames of higher priority, but it does increase the latency of
+   traffic whose identifiers have a lower priority than the transfer.
+   An MTU larger than 1280 octets SHOULD therefore be used only where
+   the resulting bus occupancy is acceptable for the application.
+
+5.9.  Fragmentation and Reassembly Considerations
+
+   A subset of ISO-TP (ISO 15765-2) is used to fragment and reassemble
+   the packets.  This subset of ISO-TP can send packets with a payload
+   size of up to 4095 octets, enough for IPv6 minimum MTU size of 1280
+   octets.  ISO-TP is designed for CAN and its small payload data size
+   and therefore preferred over [RFC4944] fragmentation.
+
+   The 6LoWPAN fragmentation would use more than the half of the
+   available payload for the fragmentation headers.  This fact prevents
+   6LoWPAN fragmentation from being used for 6LoCAN.
+
+   [RFC8724] also defines a fragmentation and reassembly mechanism.
+   6LoCAN does not use it.  ISO-TP is the mechanism that CAN deployments
+   already use: it is specified for CAN in [ISO15765-2], it is widely
+   implemented in CAN controllers and protocol stacks, and its flow
+   control and timeout behaviour are defined in terms of CAN.  Using it
+   lets a 6LoCAN node share the segmentation implementation that the
+   installation already contains.
+
+5.10.  IPv6 Address Mapping
+
+5.10.1.  Unicast Address Mapping
+
+   The address resolution procedure for mapping IPv6 non-multicast
+   addresses into CAN Data link layer Addresses (Node addresses) follows
+   the general description in Sections 4.6.1 and 7.2 of [RFC4861],
+   unless otherwise specified.
+
+   The Source/Target Link-Layer Address option has the following form
+   when the addresses are 14-bit CAN Data Link Layer Addresses.
+
+    0                   1
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |      Type     |   Length=1    |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                               |
+   +-     Padding (all zeros)     -+
+   |                               |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |Rsv| CAN Data Link-Layer Addr. |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+                   Figure 8: IPv6 Unicast Address Mapping
+
+   Option fields:
+
+   Type:  1: This is for the Source Link-Layer Address. 2: This is for
+       the Target Link-Layer Address.
+
+   Length:  This is the length of this option (including the Type and
+       Length fields) in units of 8 octets.  The value of this field is
+       1 for 14-bit CAN Data Link Layer addresses.
+
+   Rsv:  Reserved. 2 bits.  These bits MUST be set to zero by the sender
+       and MUST be ignored by the receiver.
+
+   CAN Data Link-Layer Address:  The 14-bit node address of the sender
+       (Source Link-Layer Address) or of the target (Target Link-Layer
+       Address).
+
+5.10.2.  Multicast Address Mapping
+
+   CAN has no link-layer multicast address.  An IPv6 multicast address
+   is therefore mapped directly onto a frame identifier: the multicast
+   bit is set and the destination field carries the low-order 14 bits of
+   the multicast group, as specified in Section 5.3.2.  No link-layer
+   address resolution is performed for a multicast destination, and the
+   Source/Target Link-Layer Address option is not used for one.
+
+   Because the CAN data link layer does not provide multicast, ISO-TP is
+   used for multicast frames without its flow control mechanism; see
+   Section 4.1 and Section 5.9.
+
+5.11.  Frame Format
+
+   This section provides information about data arrangement in the frame
+   data field.
+
+   The first octets of a CAN frame always contain the ISO-TP header.  In
+   the first frame of a packet the ISO-TP header is followed by the SCHC
+   packet of [RFC8724]: a Rule ID, then the compression residue, then
+   the payload.  The SCHC packet may be spread over several frames.
+
+   +-----------------------------------------+
+   | ISO-TP Header (1-3 octets)              |
+   +-----------------------------------------+
+   | SCHC Rule ID (1 octet)                  |
+   +-----------------------------------------+
+   | Compression Residue (0 or more octets)  |
+   +-----------------------------------------+
+   | Payload                                 |
+   +-----------------------------------------+
+
+                       Figure 9: 6LoCAN Frame Format
+
+   The Rule ID is one octet (see Section 5.7.2).  The size of the
+   compression residue depends on the rule that matched: it is empty
+   when the rule elides every field, and otherwise it carries the fields
+   that the rule sends, in the order in which the rule lists them.  The
+   residue is padded at its end so that the payload starts on an octet
+   boundary, as described in Section 5 of [RFC8724]; for 6LoCAN the L2
+   word is one octet.
+
+   Packets with a destination or source address of the 0x3DF0
+   (Translator address) carry the Ethernet MAC address inline directly
+   after the ISO-TP Header.  For packets destined for the translator, it
+   is the destination MAC address, and for packets originated by the
+   translator, it is the source MAC address.
+
+   +-----------------------------------------+
+   | ISO-TP Header (1-3 octets)              |
+   +-----------------------------------------+
+   | Ethernet MAC Address (48 bits)          |
+   +-----------------------------------------+
+   | SCHC Rule ID (1 octet)                  |
+   +-----------------------------------------+
+   | Compression Residue (0 or more octets)  |
+   +-----------------------------------------+
+   | Payload                                 |
+   +-----------------------------------------+
+
+                 Figure 10: 6LoCAN Translator Frame Format
+
+6.  Ethernet Border Translator
+
+   This section specifies how 6LoCAN packets are translated to and from
+   Ethernet frames.
+
+   The Ethernet Border Translator connects 6LoCAN bus-segments either to
+   other 6LoCAN bus-segments or other technologies.  Ethernet is a
+   widely used technology that provides enough bandwidth to connect
+   several 6LoCAN segments.  A mechanism like the 6LBR is not necessary
+   because there is no routing on 6LoCAN segments.  To provide routing
+   or switching capabilities, the Ethernet Border Translator connects a
+   6LoCAN network to such devices via Ethernet.
+
+   Bus segments MUST NOT have more than one translator.  The translator
+   has a fixed node address (0x3DF0) and a range of Ethernet MAC
+   addresses.  Every packet sent to this node address or any multicast
+   address is forwarded to Ethernet.  Every Ethernet frame matching the
+   MAC address range and every multicast Ethernet frame is forwarded to
+   the 6LoCAN bus-segment.
+
+   For translating a 6LoCAN packet to an Ethernet frame, the source
+   address is extended with a 34 bits MAC address prefix, and the SCHC-
+   compressed headers are decompressed.  The 34 bits prefix MUST be
+   chosen in a way that the resulting 48-bit MAC address forms a locally
+   administered address that is unique on the link.  The destination MAC
+   is carried in-line before the compressed IPv6 header (see
+   Section 5.11, Figure 10).  ICMPv6 messages MUST be checked for Link-
+   Layer Address Options (LLAO), and if an LLAO is present, it MUST be
+   changed to the extended link-layer address.  For translating Ethernet
+   frames to 6LoCAN packets, the source MAC address is carried in-line,
+   the destination node address is the last 14 bits of the MAC address,
+   and the headers are compressed using SCHC.
+
+   The Neighbor Caches of the networking stack must be able to store
+   link-layer addresses with a size of 14 and 48 bits.
+
+   For multicast Ethernet frames, the last 14 bits of the multicast
+   group is the destination address, and the multicast bit is set.  The
+   destination address MAY also be reconstructed from the destination
+   multicast address.  The destination Ethernet MAC address is formed
+   from the destination IP address as described in [RFC2464] section 7.
+
+   If the translator includes a network stack, the translator MUST NOT
+   use a MAC address within the ranges used for translation, with the
+   following exception: The translator MAY use the extended MAC address
+   that corresponds to the translator node address.
+
+7.  Internet Connectivity Scenarios
+
+   This section shows an example of a 6LoCAN segment connected to an
+   Ethernet network and examples of the address translations specified
+   in Section 6.
+
+   Figure 14 shows an example setup of a 6LoCAN segment connected to an
+   Ethernet network.
+
+   Figure 11 shows a translation from Ethernet MAC to CAN identifier.
+   The source (src) MAC address is carried in-line in the CAN frame
+   data.  The 34-bit MAC address prefix for this example is 02:00:5E:10
+   followed by two zero bits, written as 02:00:5E:10:00/34.
+
+   |0                            4|4                              9
+   |0                            7|8                              5
+   +------------------------------+-------------------------------+
+   | dest MAC (02:00:5E:10:30:55) |  src MAC (02:00:5E:10:00:FF)  |
+   +------------------------------+-------------------------------+
+                             Ethernet MAC
+
+    0|0            1|1            2|
+    0|1            4|5            8|
+   +-+--------------+--------------+
+   |0|dest (0x3055) | src (0x3DF0) |
+   +-+--------------+--------------+
+               CAN identifier
+
+      Figure 11: Example address translation from Ethernet MAC to CAN
+                                identifier.
+
+   Figure 12 shows a translation from a multicast Ethernet MAC to CAN
+   identifier.  The source MAC address is carried in-line in the CAN
+   frame data.
+
+   |0                            4|4                             9|
+   |0                            7|8                             5|
+   +------------------------------+-------------------------------+
+   | dest MAC (33:33:00:01:00:01) |  src MAC (02:00:5E:10:00:FF)  |
+   +------------------------------+-------------------------------+
+                             Ethernet MAC
+
+    0|0            1|1            2|
+    0|1            4|5            8|
+   +-+--------------+--------------+
+   |1|dest (0x0001) | src (0x3DF0) |
+   +-+--------------+--------------+
+               CAN identifier
+
+      Figure 12: Example address translation from Ethernet to CAN for
+                              multicast frames
+
+   Figure 13 shows a translation CAN identifier to Ethernet MAC.  The
+   destination (dest) MAC address is carried inline in the CAN frame
+   data.  The 34-bit MAC address prefix for this example is 02:00:5E:10
+   followed by two zero bits, written as 02:00:5E:10:00/34.
+
+    0|0            1|1            2|
+    0|1            4|5            8|
+   +-+--------------+--------------+
+   |0|dest (0x3DF0) | src (0x3055) |
+   +-+--------------+--------------+
+               CAN identifier
+   |0                            4|4                             9|
+   |0                            7|8                             5|
+   +------------------------------+-------------------------------+
+   | dest MAC (02:00:5E:10:00:FF) |  src MAC (02:00:5E:10:30:55)  |
+   +------------------------------+-------------------------------+
+                             Ethernet MAC
+
+       Figure 13: Example address translation from CAN identifier to
+                      Ethernet MAC for unicast frames
+
+                                             +-----+  +-----+
+                                             |CAN  |  |CAN  |  ...
+                                             |node |  |node |
+                                             +--+--+  +--+--+
+   +--------+---+     +---+----------+---+      |        |
+   |        |   |     |   |Ethernet  |   |      |        |
+   | Switch |ETH|<--->|ETH|Border    |CAN|------+--------+---- ...
+   |        |   |     |   |Translator|   |
+   +--------+---+     +---+----------+---+
+
+          Figure 14: Example setup with Ethernet Border Translator
+
+8.  IANA Considerations
+
+   The IANA considerations for this document have not yet been
+   determined.  A future revision will specify the registry actions
+   required by this document, or state that this document has no IANA
+   actions.
+
+9.  Security Considerations
+
+   This document doesn't provide any security mechanisms.  Traffic on
+   the bus can be intercepted, spoofed, or destroyed.  For
+   confidentiality and integrity, mechanisms like TLS or IPsec need to
+   be applied.
+
+   The link-local IID defined in Section 5.4 is derived from the node
+   address and therefore exposes that address in every link-local IPv6
+   address of the node.  Within a bus segment this discloses nothing
+   new, because the node address appears in the CAN frame identifier of
+   every frame the node sends or receives.  It would become a concern if
+   the node address were also used to form addresses that are routable
+   beyond the segment: such an address would remain stable for as long
+   as the node keeps its node address and would allow the node to be
+   tracked across networks, which is what [RFC8064] and [RFC7217] are
+   intended to prevent.  For this reason the node address is used only
+   for link-local IIDs.
+
+   A 14-bit node address space holds 16384 values and can be scanned
+   exhaustively in a short time.  The size of the address space
+   therefore provides no protection against discovery of the nodes
+   present on a bus segment.
+
+10.  References
+
+10.1.  Normative References
+
+   [I-D.ietf-6lo-schc-15dot4]
+              Gomez, C. and A. Minaburo, "Transmission of SCHC-
+              compressed packets over IEEE 802.15.4 networks", Work in
+              Progress, Internet-Draft, draft-ietf-6lo-schc-15dot4-14,
+              31 October 2026, <https://datatracker.ietf.org/doc/html/
+              draft-ietf-6lo-schc-15dot4-14>.
+
+   [RFC2464]  Crawford, M., "Transmission of IPv6 Packets over Ethernet
+              Networks", RFC 2464, DOI 10.17487/RFC2464, December 1998,
+              <https://www.rfc-editor.org/rfc/rfc2464>.
+
+   [RFC4291]  Hinden, R. and S. Deering, "IP Version 6 Addressing
+              Architecture", RFC 4291, DOI 10.17487/RFC4291, February
+              2006, <https://www.rfc-editor.org/rfc/rfc4291>.
+
+   [RFC4861]  Narten, T., Nordmark, E., Simpson, W., and H. Soliman,
+              "Neighbor Discovery for IP version 6 (IPv6)", RFC 4861,
+              DOI 10.17487/RFC4861, September 2007,
+              <https://www.rfc-editor.org/rfc/rfc4861>.
+
+   [RFC4862]  Thomson, S., Narten, T., and T. Jinmei, "IPv6 Stateless
+              Address Autoconfiguration", RFC 4862,
+              DOI 10.17487/RFC4862, September 2007,
+              <https://www.rfc-editor.org/rfc/rfc4862>.
+
+   [RFC4944]  Montenegro, G., Kushalnagar, N., Hui, J., and D. Culler,
+              "Transmission of IPv6 Packets over IEEE 802.15.4
+              Networks", RFC 4944, DOI 10.17487/RFC4944, September 2007,
+              <https://www.rfc-editor.org/rfc/rfc4944>.
+
+   [RFC6775]  Shelby, Z., Ed., Chakrabarti, S., Nordmark, E., and C.
+              Bormann, "Neighbor Discovery Optimization for IPv6 over
+              Low-Power Wireless Personal Area Networks (6LoWPANs)",
+              RFC 6775, DOI 10.17487/RFC6775, November 2012,
+              <https://www.rfc-editor.org/rfc/rfc6775>.
+
+   [RFC7136]  Carpenter, B. and S. Jiang, "Significance of IPv6
+              Interface Identifiers", RFC 7136, DOI 10.17487/RFC7136,
+              February 2014, <https://www.rfc-editor.org/rfc/rfc7136>.
+
+   [RFC7217]  Gont, F., "A Method for Generating Semantically Opaque
+              Interface Identifiers with IPv6 Stateless Address
+              Autoconfiguration (SLAAC)", RFC 7217,
+              DOI 10.17487/RFC7217, April 2014,
+              <https://www.rfc-editor.org/rfc/rfc7217>.
+
+   [RFC8064]  Gont, F., Cooper, A., Thaler, D., and W. Liu,
+              "Recommendation on Stable IPv6 Interface Identifiers",
+              RFC 8064, DOI 10.17487/RFC8064, February 2017,
+              <https://www.rfc-editor.org/rfc/rfc8064>.
+
+   [RFC8200]  Deering, S. and R. Hinden, "Internet Protocol, Version 6
+              (IPv6) Specification", STD 86, RFC 8200,
+              DOI 10.17487/RFC8200, July 2017,
+              <https://www.rfc-editor.org/rfc/rfc8200>.
+
+   [RFC8505]  Thubert, P., Ed., Nordmark, E., Chakrabarti, S., and C.
+              Perkins, "Registration Extensions for IPv6 over Low-Power
+              Wireless Personal Area Network (6LoWPAN) Neighbor
+              Discovery", RFC 8505, DOI 10.17487/RFC8505, November 2018,
+              <https://www.rfc-editor.org/rfc/rfc8505>.
+
+   [RFC8724]  Minaburo, A., Toutain, L., Gomez, C., Barthel, D., and JC.
+              Zuniga, "SCHC: Generic Framework for Static Context Header
+              Compression and Fragmentation", RFC 8724,
+              DOI 10.17487/RFC8724, April 2020,
+              <https://www.rfc-editor.org/rfc/rfc8724>.
+
+10.2.  Informative References
+
+   [I-D.wachter-6lo-can]
+              Wachter, A., "IPv6 over Controller Area Network", Work in
+              Progress, Internet-Draft, draft-wachter-6lo-can-01, 27
+              February 2020, <https://datatracker.ietf.org/doc/html/
+              draft-wachter-6lo-can-01>.
+
+   [ISO11898-1]
+              ISO, "Road vehicles — Controller area network (CAN) Part
+              1: Data link layer and physical coding sublayer", ISO
+              Std 11898-1:2024, May 2024,
+              <https://www.iso.org/standard/86384.html>.
+
+   [ISO11898-2]
+              ISO, "Road vehicles — Controller area network (CAN) Part
+              2: High-speed physical medium attachment (PMA) sublayer",
+              ISO Std 11898-2:2024, March 2024,
+              <https://www.iso.org/standard/85120.html>.
+
+   [ISO15765-2]
+              ISO, "Road vehicles — Diagnostic communication over
+              Controller Area Network (DoCAN) Part 2: Transport protocol
+              and network layer services", ISO Std 15765-2:2024, April
+              2024, <https://www.iso.org/standard/84211.html>.
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/rfc/rfc2119>.
+
+   [RFC4919]  Kushalnagar, N., Montenegro, G., and C. Schumacher, "IPv6
+              over Low-Power Wireless Personal Area Networks (6LoWPANs):
+              Overview, Assumptions, Problem Statement, and Goals",
+              RFC 4919, DOI 10.17487/RFC4919, August 2007,
+              <https://www.rfc-editor.org/rfc/rfc4919>.
+
+   [RFC6282]  Hui, J., Ed. and P. Thubert, "Compression Format for IPv6
+              Datagrams over IEEE 802.15.4-Based Networks", RFC 6282,
+              DOI 10.17487/RFC6282, September 2011,
+              <https://www.rfc-editor.org/rfc/rfc6282>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+Acknowledgements
+
+   This document is based on [I-D.wachter-6lo-can], an earlier Internet-
+   Draft authored by Alexander Wachter.
+
+Changes from draft-pjs-6lo-can-00
+
+   This section is to be removed before publication as an RFC.
+
+   *  Header compression changed from the 6LoWPAN header compression of
+      [RFC6282] to SCHC [RFC8724].  The section on 6LoWPAN header
+      compression, which was empty, has been removed, and Section 5.7
+      now specifies the use of SCHC, the provisioning of the context and
+      the Rule ID size.  [RFC6282] has become an informative reference.
+
+   *  Only the compression part of SCHC is used.  Section 5.9 now states
+      why ISO-TP rather than the SCHC fragmentation and reassembly
+      mechanism provides fragmentation.
+
+   *  Section 5.11 replaces the dispatch and LOWPAN_IPHC fields with the
+      SCHC Rule ID and compression residue.
+
+   *  Section 5.4 now justifies the node-address-derived interface
+      identifier with the SCHC DEVIID and APPIID actions instead of with
+      [RFC6282] elision.
+
+   *  The CAN FD frame format is now required; see Section 5.1.
+
+   *  The LLDAD no longer uses remote frames.  LLDAD-requests and DAD-
+      responses are frames with a data length of zero, which is
+      unambiguous because a 6LoCAN packet always starts with an ISO-TP
+      header.  Retry behaviour, the handling of two nodes probing the
+      same address at the same time, and the origin of the 100 ms timer
+      are now specified; see Section 5.3.4.
+
+   *  The affiliation of the first author has been removed.
+
+Authors' Addresses
+
+   Alexander Wachter
+   Email: alexander@wachter.cloud
+
+
+   Jungsoo Park (editor)
+   Electronics and Telecommunications Research Institute
+   218 Gajeongno, Yuseong-gu
+   Daejeon
+   34129
+   South Korea
+   Phone: +82 42 860 6514
+   Email: pjs@etri.re.kr

@@ -1,0 +1,2377 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>Transmission of IPv6 Packets over Controller Area Network</title>
+<meta content="Alexander Wachter" name="author">
+<meta content="Jungsoo Park" name="author">
+<meta content="
+       Controller Area Network (CAN) is a fieldbus initially designed for automotive applications.
+It has since been adopted for use in various industrial applications, such as CANopen and building automation systems.
+CAN operates as a multi-master bus with frame identifiers of 11 bits or 29 bits. The CAN standard, defined in the ISO 11898 series, specifies both the physical and data-link layers.
+This document describes how to transfer IPv6 packets over CAN using ISO-TP, a dedicated addressing scheme for CAN nodes, and Static Context Header Compression (SCHC). 
+    " name="description">
+<meta content="xml2rfc 3.34.1" name="generator">
+<meta content="Controller Area Network" name="keyword">
+<meta content="CAN" name="keyword">
+<meta content="ISO 11898" name="keyword">
+<meta content="ISO-TP" name="keyword">
+<meta content="6LowPAN" name="keyword">
+<meta content="IPv6" name="keyword">
+<meta content="Adaptation Layer" name="keyword">
+<meta content="IoT" name="keyword">
+<meta content="Internet of Things" name="keyword">
+<meta content="draft-pjs-6lo-can-latest" name="ietf.draft">
+<!-- Generator version information:
+  xml2rfc 3.34.1
+    Python 3.14.8
+    ConfigArgParse 1.8.0
+    google-i18n-address 3.1.1
+    intervaltree 3.2.1
+    Jinja2 3.1.6
+    lxml 6.1.1
+    natsort 8.4.0
+    platformdirs 4.13.4
+    pycountry 24.6.1
+    PyYAML 6.0.3
+    requests 2.33.1
+    wcwidth 0.9.2
+-->
+<link href="draft-pjs-6lo-can.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Lora SemiBold'), local('Lora-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-semibold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-greek.woff2') format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-greek.woff2') format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: light dark;
+  --background-color: #fff;
+  --text-color: #222;
+  --title-color: #191919;
+  --link-color: #2a6496;
+  --highlight-color: #f9f9f9;
+  --line-color: #eee;
+  --pilcrow-weak: #ddd;
+  --pilcrow-strong: #bbb;
+  --small-font-size: 14.5px;
+  --font-mono: 'Oxygen Mono', monospace;
+  --font-title: "Sofia Sans Semi Condensed", sans-serif;
+  scrollbar-color: #bbb #eee;
+}
+body {
+  max-width: 600px;
+  margin: 75px auto;
+  padding: 0 5px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  font: 16px/22px "Lora", serif;
+  scroll-behavior: smooth;
+}
+
+.ears {
+  display: none;
+}
+
+/* headings */
+section {
+  clear: both;
+}
+.section-number {
+  padding-right: 0.5em;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-title);
+  font-weight: 680;
+  margin: 0.8em 0 0.3em;
+  font-size-adjust: 0.5;
+  color: var(--title-color);
+}
+h1 {
+  &#title {
+    font-size: 32px;
+    line-height: 40px;
+    clear: both;
+    margin: 1.5em 0 0.2em;
+  }
+  &#rfcnum {
+    margin: 1.5em 0 0.2em;
+    & + h1#title {
+      margin: 0.2em 0;
+    }
+  }
+}
+
+h1, h2, h3 {
+  font-size: 22px;
+  line-height: 27px;
+}
+h4, h5, h6 {
+  font-size: 20px;
+  line-height: 24px;
+}
+
+/* general structure */
+.author {
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+#abstract+p {
+  font-size: 18px;
+  line-height: 24px;
+  & code, & samp, & tt {
+    font-size: 16px;
+    line-height: 0;
+  }
+}
+
+p {
+  padding: 0;
+  margin: 0.5em 0;
+  text-align: left;
+}
+div {
+  margin: 0;
+}
+.alignRight {
+  margin: 1em 0;
+  &.art-text {
+    background-color: var(--highlight-color);
+    border: 1px solid var(--line-color);
+    border-radius: 3px;
+    padding: 0.5em 1em 0;
+    margin-bottom: 0.5em;
+    & pre {
+      padding: 0;
+      width: auto;
+    }
+  }
+  & > *:first-child {
+    border: none;
+    margin: 0;
+    float: right;
+    clear: both;
+  }
+  & > *:nth-child(2) {
+    clear: both;
+    display: block;
+    border: none;
+  }
+}
+svg {
+  display: block;
+  /* font-family isn't space-separated, but =~ will have to do */
+  &[font-family~="monospace" i], & [font-family~="monospace" i] {
+    font-family: var(--font-mono);
+  }
+}
+.alignCenter {
+  margin: 1em 0;
+  &.art-text {
+    background-color: var(--highlight-color);
+    border: 1px solid var(--line-color);
+    border-radius: 3px;
+    padding: 0.5em 1em 0;
+    margin-bottom: 0.5em;
+    & pre {
+      padding: 0;
+      width: auto;
+    }
+  }
+  & > *:first-child {
+    border: none;
+    /* this isn't optimal, but it's an existence proof.  PrinceXML doesn't
+       support flexbox yet.
+    */
+    display: table;
+    margin: 0 auto;
+  }
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 0.5em 2em;
+  & :is(ol, ul) {
+    margin-left: 1em;
+  }
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+  & li {
+    margin-top: 0.5em;
+  }
+}
+:is(ul, ol).compact, .ulCompact, .olCompact {
+  margin: 0 0 0 2em;
+  & li {
+    margin: 0;
+    & :first-child { margin-top: 0; }
+    & :last-child { margin-bottom: 0; }
+  }
+}
+
+/* definition lists */
+dl {
+  clear: left;
+  --indent: 3ch;
+  /* --indent: attr(indent ch); not supported in any browser, but we can dream */
+  &.olPercent {
+    --indent: 5ch;
+    & > dt {
+      min-width: calc(var(--indent) - 2ch);
+      float: none;
+    }
+  }
+
+  dl > dd > & {
+    margin-top: 0.5em;
+    margin-bottom: 0;
+  }
+
+  &:not(.dlNewline) > dt {
+    float: left;
+    margin-right: 2ch;
+    min-width: 8ch;
+  }
+  & > dd {
+    margin-bottom: .8em;
+    margin-left: var(--indent) !important; /* stupid element overrides */
+    min-height: 2ex;
+  }
+}
+:is(dl.compact, .dlCompact) > dd {
+  margin-bottom: 0;
+  & > :is(:first-child, .break:first-child + *) {
+    margin-top: 0;
+  }
+  & > :is(:last-child) {
+    margin-bottom: 0;
+  }
+}
+:is(dd, span).break {
+  display: none;
+}
+
+/* links */
+a {
+  text-decoration: none;
+  &[href] {
+    color: var(--link-color);
+    &:hover { text-decoration: underline; }
+    &.selfRef {
+      color: var(--text-color);
+      &:hover {
+        text-decoration: none;
+        background-color: var(--highlight-color);
+      }
+    }
+  }
+}
+.iref + a[href].internal {
+  color: var(--text-color);
+}
+a.xref:is(.cite, .auto), :is(#status-of-memo, #copyright) a {
+  white-space: nowrap;
+}
+
+/* Figures */
+tt, code, pre {
+  background-color: var(--highlight-color);
+  font: 14px/22px var(--font-mono);
+}
+tt, code {
+  /* changing the font for inline elements leads to different ascender
+     and descender heights; as we want to retain baseline alignment,
+     remove leading to avoid altering the final height of lines
+     note: this fails if these blocks take an entire line,
+     a different solution would be great */
+  line-height: 0;
+}
+:is(h1, h2, h3, h4, h5, h6) :is(tt, code) {
+  font-size: 84%;
+}
+pre {
+  border: 1px solid var(--line-color);
+  font-size: 13.5px;
+  line-height: 16px;
+  letter-spacing: -0.2px;
+  margin: 5px;
+  padding: 5px;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0.5em 0;
+  padding: 0;
+  & blockquote {
+    margin: 0.8em 0.4em 0.4em;
+  }
+}
+figcaption, caption {
+  font-style: italic;
+  margin: 0.5em 1.5em;
+  text-align: left;
+  caption-side: bottom;
+}
+@media screen {
+  /* Auto-collapse boilerplate. */
+  :is(#status-of-memo, #copyright) {
+    & p {
+      margin: -2px 0;
+      max-height: 0;
+      transition: max-height 2s ease, margin 0.5s ease 0.5s;
+      overflow: hidden;
+    }
+    &:hover p,
+    & h2:target ~ p {
+      margin: 0.5em 0;
+      max-height: 500px;
+      overflow: auto;
+    }
+  }
+  pre, svg {
+    display: inline-block;
+    /* In the horizontal direction, sometimes people make over-sized figures.
+       Scrollbars for those is therefore necessary: auto adds them as necessary..
+       In the vertical direction, the line-height can combine with the font
+       asender/descender height to produce scrollbars: hidden avoids that. */
+    overflow: auto hidden;
+  }
+  pre {
+    max-width: 100%;
+    width: calc(100% - 22px - 1em);
+  }
+  svg {
+    max-width: calc(100% - 22px - 1em);
+  }
+  figure pre {
+    display: block;
+    width: calc(100% - 25px);
+  }
+  :is(pre, svg) + .pilcrow {
+    display: inline-block;
+    vertical-align: text-bottom;
+    padding-bottom: 8px;
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 0 2em;
+  font-style: italic;
+}
+blockquote {
+  margin: 1em 0;
+  border-left: 2px var(--pilcrow-strong) solid;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+
+/* tables */
+table {
+  width: auto;
+  max-width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+  &.right { margin-left: auto; }
+  &.center { margin-left: auto; margin-right: auto; }
+  &.left { margin-right: auto; }
+  & .text-left { text-align: left; }
+  & .text-center { text-align: center; }
+  & .text-right { text-align: right; }
+  & caption {
+    margin: 0;
+    padding: 3px 0 3px 1em;
+  }
+  & p { margin: 0; }
+}
+
+thead, tbody {
+  border: 1px solid var(--line-color);
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 5px 10px;
+}
+th {
+  background-color: var(--line-color);
+}
+:is(tr:nth-child(2n), thead+tbody > tr:nth-child(2n+1)) > td {
+  background-color: var(--background-color);
+}
+:is(tr:nth-child(2n+1), thead+tbody > tr:nth-child(2n)) > td {
+  background-color: var(--highlight-color);
+}
+
+/* pilcrow */
+a.pilcrow {
+  margin-left: 3px;
+  opacity: 0.2;
+  user-select: none;
+  &[href] {
+    color: var(--pilcrow-weak);
+    &:hover { text-decoration: none; }
+  }
+  @media not print {
+    :hover > &, &:focus {
+      opacity: 1;
+    }
+    &[href]:hover {
+      color: var(--pilcrow-strong);
+      background-color: transparent;
+    }
+  }
+  @media print {
+    display: none;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid var(--line-color);
+}
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: 600;
+  font-size: var(--small-font-size);
+}
+.role {
+  font-variant: all-small-caps;
+}
+sub, sup {
+  line-height: 1;
+  font-size: 80%;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: var(--small-font-size);
+  line-height: 18px;
+  --identifier-width: 15ch;
+  & dt {
+    width: var(--identifier-width);
+    min-width: var(--identifier-width);
+    clear: left;
+    float: left;
+    text-align: right;
+    margin-right: 1ch;
+  }
+  & dd {
+    margin: 0;
+    margin-left: calc(1em + var(--identifier-width)) !important;
+    min-width: 5em;
+  }
+  & .authors {
+    & .author {
+      display: inline-block;
+      margin-right: 1.5em;
+    }
+    & .org {
+      font-style: italic;
+    }
+  }
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #999;
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+  & .prepared {
+    float: right;
+  }
+}
+
+/* table of contents */
+#toc {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+
+  & nav {
+    & ul {
+      margin: 0 0.5em 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    & li {
+      line-height: 1.3em;
+      margin: 2px 0;
+      padding-left: 1.2em;
+      text-indent: -1.2em;
+    }
+  }
+  & a.xref {
+    white-space: normal;
+  }
+}
+
+.references {
+  & > dt {
+    text-align: right;
+    font-weight: bold;
+    min-width: 10ch;
+    margin-right: 1.5ch;
+    &:target::before {
+      content: "⇒";
+      margin: 0 10px 0 -25px;
+    }
+  }
+  & > dd {
+    margin-left: 12ch !important;
+    overflow: visible;
+    & .refInstance {
+      margin-bottom: 0.8em;
+    }
+    & .ascii {
+      margin-bottom: 0.25em;
+    }
+  }
+}
+
+#rfc\.index\.index + ul {
+  margin-left: 0;
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  max-width: 20em;
+  margin: 1em auto 1em 0;
+
+  & .nameRole {
+    font-weight: 700;
+    margin-left: 0;
+  }
+  & .label {
+    margin: 0.5em 0;
+  }
+  & .type {
+    display: none;
+  }
+  & .alternative-contact {
+    margin: 0.5em 0 0.25em 0;
+  }
+  & .non-ascii {
+    margin: 0 0 0 2em;
+  }
+  & div.left {
+    text-align: left;
+  }
+  & div.right {
+    text-align: right;
+  }
+}
+
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+@media (min-width: 500px) {
+  #authors-addresses {
+    & > section {
+      column-count: 2;
+      column-gap: 20px;
+    }
+    & > section > h2 {
+      column-span: all;
+    }
+    /* hack for break-inside: avoid-column */
+    & address {
+      display: inline-block;
+      break-inside: avoid-column;
+    }
+  }
+}
+
+/* Comments */
+.rfcEditorRemove {
+  & p:first-of-type {
+    font-style: italic;
+  }
+}
+.cref {
+  background-color: rgba(249, 232, 105, 0.3);
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+
+@media screen {
+  #toc {
+    & nav {
+      font-family: var(--font-title);
+      font-weight: 360;
+      & > ul { margin-bottom: 2em; }
+      & ul {
+        margin: 0 0 0 4px;
+        & :is(p, li) {
+          margin: 2px 0;
+        }
+      }
+    }
+    & a.toplink {
+      float: right;
+    }
+  }
+}
+@media not screen {
+  #toc a.toplink {
+    display: none;
+  }
+}
+
+
+/* TOC layout for smaller screens */
+@media screen and (max-width: 929px) {
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 1px 0 0 0;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+    opacity: 0.6;
+    & h2 {
+      margin: 0;
+      padding: 2px 0 2px 6px;
+      padding-right: 1em;
+      font-size: 18px;
+      line-height: 24px;
+      min-width: 190px;
+      text-align: right;
+      background-color: #444;
+      color: white;
+      cursor: pointer;
+      &::before { /* css hamburger */
+        float: right;
+        position: relative;
+        width: 1em;
+        height: 1px;
+        left: -164px;
+        margin: 8px 0 0 0;
+        background: white none repeat scroll 0 0;
+        box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+        content: "";
+      }
+    }
+    & nav {
+      display: none;
+      background-color: var(--background-color);
+      padding: 0.5em 1em 1em;
+      overflow: auto;
+      overscroll-behavior: contain;
+      height: calc(100vh - 48px);
+      border-left: 1px solid #ddd;
+    }
+    &.active {
+      opacity: 1;
+      & nav { display: block; }
+    }
+    /* Make the collapsed ToC header render white on gray also when it's a link */
+    & h2 a,
+    & h2 a:is(:link, :focus, :hover),
+    & a.toplink,
+    & a.toplink:hover {
+      color: white;
+      background-color: #444;
+      text-decoration: none;
+    }
+    & a.toplink {
+      margin: 2px 0.5em 0;
+    }
+  }
+}
+
+/* TOC layout for wide screens */
+@media screen and (min-width: 930px) {
+  body {
+    padding-right: 360px;
+    padding-right: calc(min(180px + 20%, 500px));
+  }
+  #toc {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    right: calc(50vw - 480px);
+    width: 312px;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+    & h2 {
+      margin: 0;
+      padding: 0.25em 1em 1em 0;
+    }
+    & nav {
+      display: block;
+      height: calc(90vh - 84px);
+      bottom: 0;
+      padding: 0.5em 0 2em;
+      overflow: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+    }
+    & a.toplink {
+      margin: 8px 0.5em 0;
+    }
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc {
+    page-break-before: always;
+    border-top: none;
+    padding-top: 0;
+  }
+  #n-introduction {
+    page-break-before: always;
+  }
+  figure, pre, .vcard {
+    page-break-inside: avoid;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  :is(h2, h3, h4, h5, h6)+*, dd {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+}
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+}
+
+/* Dark mode. */
+@media (prefers-color-scheme: dark) {
+:root {
+  --background-color: #121212;
+  --text-color: #f0f0f0;
+  --title-color: #fff;
+  --link-color: #4da4f0;
+  --highlight-color: #282828;
+  --line-color: #444;
+  --pilcrow-weak: #444;
+  --pilcrow-strong: #666;
+  scrollbar-color: #777 #333;
+}
+}
+
+/* SVG Trick: a prefix match works because only black and white are allowed */
+svg {
+  & :is([stroke="black"], [stroke^="#000"]) {
+    stroke: var(--text-color);
+  }
+  & :is([stroke="white"], [stroke^="#fff"]) {
+    stroke: var(--background-color);
+  }
+  & :is([fill="black"], [fill^="#000"], :not([fill])) {
+    fill: var(--text-color);
+  }
+  & :is([fill="white"], [fill^="#fff"]) {
+    fill: var(--background-color);
+  }
+}
+</style>
+
+</head>
+<body class="xml2rfc">
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">6LoCAN</td>
+<td class="right">November 2026</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Wachter &amp; Park</td>
+<td class="center">Expires 7 May 2027</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">6lo</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-pjs-6lo-can-latest</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2026-11-03" class="published">3 November 2026</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Standards Track</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2027-05-07">7 May 2027</time></dd>
+<dt class="label-authors">Authors:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">A. Wachter</div>
+</div>
+<div class="author">
+      <div class="author-name">J. Park, <span class="editor">Ed.</span>
+</div>
+<div class="org">ETRI</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">Transmission of IPv6 Packets over Controller Area Network</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">Controller Area Network (CAN) is a fieldbus initially designed for automotive applications.
+It has since been adopted for use in various industrial applications, such as CANopen and building automation systems.
+CAN operates as a multi-master bus with frame identifiers of 11 bits or 29 bits. The CAN standard, defined in the ISO 11898 series, specifies both the physical and data-link layers.
+This document describes how to transfer IPv6 packets over CAN using ISO-TP, a dedicated addressing scheme for CAN nodes, and Static Context Header Compression (SCHC).<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 7 May 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2026 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document. Code Components extracted from this
+            document must include Revised BSD License text as described in
+            Section 4.e of the Trust Legal Provisions and are provided without
+            warranty as described in the Revised BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1" class="keepWithNext"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-applicability" class="internal xref">Applicability</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1" class="keepWithNext"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-conventions-and-terminology" class="internal xref">Conventions and Terminology</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-controller-area-network-ove" class="internal xref">Controller Area Network Overview</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1">
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="auto internal xref">4.1</a>.  <a href="#name-iso-tp-overview" class="internal xref">ISO-TP Overview</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-specification-of-ipv6-over-" class="internal xref">Specification of IPv6 over CAN</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1">
+                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="auto internal xref">5.1</a>.  <a href="#name-can-fd-requirement" class="internal xref">CAN FD Requirement</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.2">
+                <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="auto internal xref">5.2</a>.  <a href="#name-protocol-stack" class="internal xref">Protocol Stack</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.3">
+                <p id="section-toc.1-1.5.2.3.1"><a href="#section-5.3" class="auto internal xref">5.3</a>.  <a href="#name-can-frame-identifiers" class="internal xref">CAN Frame Identifiers</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.3.2.1">
+                    <p id="section-toc.1-1.5.2.3.2.1.1"><a href="#section-5.3.1" class="auto internal xref">5.3.1</a>.  <a href="#name-unicast-frame-identifier" class="internal xref">Unicast Frame Identifier</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.3.2.2">
+                    <p id="section-toc.1-1.5.2.3.2.2.1"><a href="#section-5.3.2" class="auto internal xref">5.3.2</a>.  <a href="#name-multicast-frame-identifier" class="internal xref">Multicast Frame Identifier</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.3.2.3">
+                    <p id="section-toc.1-1.5.2.3.2.3.1"><a href="#section-5.3.3" class="auto internal xref">5.3.3</a>.  <a href="#name-node-address-generation" class="internal xref">Node Address Generation</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.3.2.4">
+                    <p id="section-toc.1-1.5.2.3.2.4.1"><a href="#section-5.3.4" class="auto internal xref">5.3.4</a>.  <a href="#name-link-layer-duplicate-addres" class="internal xref">Link-Layer Duplicate Address Detection</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.4">
+                <p id="section-toc.1-1.5.2.4.1"><a href="#section-5.4" class="auto internal xref">5.4</a>.  <a href="#name-stateless-address-autoconfi" class="internal xref">Stateless Address Autoconfiguration</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.5">
+                <p id="section-toc.1-1.5.2.5.1"><a href="#section-5.5" class="auto internal xref">5.5</a>.  <a href="#name-ipv6-link-local-address" class="internal xref">IPv6 Link-Local Address</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.6">
+                <p id="section-toc.1-1.5.2.6.1"><a href="#section-5.6" class="auto internal xref">5.6</a>.  <a href="#name-neighbor-discovery" class="internal xref">Neighbor Discovery</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.7">
+                <p id="section-toc.1-1.5.2.7.1"><a href="#section-5.7" class="auto internal xref">5.7</a>.  <a href="#name-header-compression" class="internal xref">Header Compression</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.7.2.1">
+                    <p id="section-toc.1-1.5.2.7.2.1.1"><a href="#section-5.7.1" class="auto internal xref">5.7.1</a>.  <a href="#name-schc-context" class="internal xref">SCHC Context</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.7.2.2">
+                    <p id="section-toc.1-1.5.2.7.2.2.1"><a href="#section-5.7.2" class="auto internal xref">5.7.2</a>.  <a href="#name-rule-identifiers" class="internal xref">Rule Identifiers</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.7.2.3">
+                    <p id="section-toc.1-1.5.2.7.2.3.1"><a href="#section-5.7.3" class="auto internal xref">5.7.3</a>.  <a href="#name-relationship-to-schc-over-i" class="internal xref">Relationship to SCHC over IEEE 802.15.4</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.8">
+                <p id="section-toc.1-1.5.2.8.1"><a href="#section-5.8" class="auto internal xref">5.8</a>.  <a href="#name-maximum-transmission-unit" class="internal xref">Maximum Transmission Unit</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.9">
+                <p id="section-toc.1-1.5.2.9.1"><a href="#section-5.9" class="auto internal xref">5.9</a>.  <a href="#name-fragmentation-and-reassembl" class="internal xref">Fragmentation and Reassembly Considerations</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.10">
+                <p id="section-toc.1-1.5.2.10.1"><a href="#section-5.10" class="auto internal xref">5.10</a>. <a href="#name-ipv6-address-mapping" class="internal xref">IPv6 Address Mapping</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.10.2.1">
+                    <p id="section-toc.1-1.5.2.10.2.1.1"><a href="#section-5.10.1" class="auto internal xref">5.10.1</a>.  <a href="#name-unicast-address-mapping" class="internal xref">Unicast Address Mapping</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.10.2.2">
+                    <p id="section-toc.1-1.5.2.10.2.2.1"><a href="#section-5.10.2" class="auto internal xref">5.10.2</a>.  <a href="#name-multicast-address-mapping" class="internal xref">Multicast Address Mapping</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.11">
+                <p id="section-toc.1-1.5.2.11.1"><a href="#section-5.11" class="auto internal xref">5.11</a>. <a href="#name-frame-format" class="internal xref">Frame Format</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-ethernet-border-translator" class="internal xref">Ethernet Border Translator</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-internet-connectivity-scena" class="internal xref">Internet Connectivity Scenarios</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="auto internal xref">8</a>.  <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-9" class="auto internal xref">9</a>.  <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#section-10" class="auto internal xref">10</a>. <a href="#name-references" class="internal xref">References</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.1">
+                <p id="section-toc.1-1.10.2.1.1"><a href="#section-10.1" class="auto internal xref">10.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.2">
+                <p id="section-toc.1-1.10.2.2.1"><a href="#section-10.2" class="auto internal xref">10.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgements" class="internal xref">Acknowledgements</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12">
+            <p id="section-toc.1-1.12.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-changes-from-draft-pjs-6lo-" class="internal xref">Changes from draft-pjs-6lo-can-00</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13">
+            <p id="section-toc.1-1.13.1"><a href="#appendix-C" class="auto internal xref"></a><a href="#name-authors-addresses" class="internal xref">Authors' Addresses</a></p>
+</li>
+        </ul>
+</nav>
+</section>
+</div>
+<div id="Introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">Controller Area Network (CAN) is mostly known for its use in the automotive domain.
+However, it is also used in industrial applications as CANopen, building automation and many more.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">It is a two-wire wired-AND multi-master bus that uses CSMA/CR in its arbitration field.
+CAN uses 11-bit (standard ID) and 29-bit (extended ID) identifiers to identify frames.
+The arbitration field also incorporates a Remote Transmission Request (RTR), marking a frame as an RTR-frame.
+The maximum payload data size is 8 octets for classical CAN and 64 octets for CAN-FD.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">The minimal MTU of IPv6 is 1280 octets, and therefore, a mechanism to support a larger payload is needed.
+This document uses a slightly modified version of the ISO-TP protocol (<span>[<a href="#ISO15765-2" class="cite xref">ISO15765-2</a>]</span>) to transfer data up to 4095 octets per packet.
+Mapping addresses to identifiers uses an addressing scheme with a 14-bit source address, a 14-bit destination address, and a multicast bit.
+This scheme uses extended identifiers only.<a href="#section-1-3" class="pilcrow">¶</a></p>
+<p id="section-1-4">To make data transfer more efficient, headers are compressed with SCHC <span>[<a href="#RFC8724" class="cite xref">RFC8724</a>]</span>.<a href="#section-1-4" class="pilcrow">¶</a></p>
+<p id="section-1-5">Due to the limited address space of 14 bits, random address generation would generate duplicate addresses with an unacceptably high probability.
+For this reason, a link-layer duplicate address detection is introduced to resolve address conflicts.<a href="#section-1-5" class="pilcrow">¶</a></p>
+<p id="section-1-6">An Ethernet border translator is designed to connect a 6LoCAN bus segment to other networks.<a href="#section-1-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="applicability-sec">
+<section id="section-2">
+      <h2 id="name-applicability">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-applicability" class="section-name selfRef">Applicability</a>
+      </h2>
+<p id="section-2-1">CAN is used in domains other than the automotive one it was designed for. Two properties
+recur in those domains: a bus that is already installed and certified as part of the
+equipment, and devices that are increasingly expected to be reachable from an IP network
+for monitoring, configuration or software update.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<p id="section-2-2">Elevators are an example. An elevator installation uses CAN to connect the controller with
+the car, the door operator and the landing stations. The bus is specified as part of the
+installation and cannot be replaced without re-certifying it, while the same installation
+is expected to report its state to a building management system or to a remote maintenance
+service. Such connectivity is commonly provided by a gateway that translates a
+vendor-specific CAN protocol into an IP protocol, and that translation has to be provided
+for each combination of equipment and management system.<a href="#section-2-2" class="pilcrow">¶</a></p>
+<p id="section-2-3">Running IPv6 on the existing CAN bus removes that per-combination translation. The
+controller, the car and the landing stations become IPv6 nodes that a management system
+addresses in the same way as any other node, and the Ethernet Border Translator
+(see <a href="#translator-sec" class="auto internal xref">Section 6</a>) is the only element that has to be adapted to the building
+network. The same reasoning applies to other installations that use CAN for their internal
+communication, such as CANopen machinery and building automation.<a href="#section-2-3" class="pilcrow">¶</a></p>
+<p id="section-2-4">6LoCAN assumes a single bus segment with a modest number of nodes that are powered from the
+installation rather than battery operated, and traffic that consists mostly of small
+messages. It is not intended for installations that need the throughput of Ethernet, nor
+for battery-operated nodes that need the duty-cycling support of <span>[<a href="#RFC6775" class="cite xref">RFC6775</a>]</span> and
+<span>[<a href="#RFC8505" class="cite xref">RFC8505</a>]</span>.<a href="#section-2-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="Terminology">
+<section id="section-3">
+      <h2 id="name-conventions-and-terminology">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-conventions-and-terminology" class="section-name selfRef">Conventions and Terminology</a>
+      </h2>
+<p id="section-3-1">The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+"SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY",
+and "OPTIONAL" in this document are to be interpreted as described in
+BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they appear in
+all capitals, as shown here.<a href="#section-3-1" class="pilcrow">¶</a></p>
+<p id="section-3-2">This specification requires readers to be familiar with all the terms and concepts that are discussed in
+"IPv6 Stateless Address Autoconfiguration" <span>[<a href="#RFC4862" class="cite xref">RFC4862</a>]</span>,
+"IPv6 over Low-Power Wireless Personal Area Networks (6LoWPANs): Overview, Assumptions, Problem Statement, and Goals" <span>[<a href="#RFC4919" class="cite xref">RFC4919</a>]</span>,
+"Transmission of IPv6 Packets over IEEE 802.15.4 Networks" <span>[<a href="#RFC4944" class="cite xref">RFC4944</a>]</span>,
+"Neighbor Discovery Optimization for IPv6 over Low-Power Wireless Personal Area Networks (6LoWPANs)" <span>[<a href="#RFC6775" class="cite xref">RFC6775</a>]</span>,
+and "SCHC: Generic Framework for Static Context Header Compression and Fragmentation" <span>[<a href="#RFC8724" class="cite xref">RFC8724</a>]</span>.<a href="#section-3-2" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-3-3">
+        <dt id="section-3-3.1">6LoWPAN Node (6LN):</dt>
+        <dd style="margin-left: 1.5em" id="section-3-3.2">
+          <p id="section-3-3.2.1">A 6LoWPAN node is any host or router participating in a LoWPAN. This term is used when referring to situations in which either a host or router can play the role described.<a href="#section-3-3.2.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-3-3.3">6LoWPAN Router (6LR):</dt>
+        <dd style="margin-left: 1.5em" id="section-3-3.4">
+          <p id="section-3-3.4.1">An intermediate router in the LoWPAN that is able to send and receive Router Advertisements (RAs) and Router Solicitations (RSs), as well as forward and route IPv6 packets. 6LoWPAN Routers are present only in route-over topologies.<a href="#section-3-3.4.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-3-3.5">6LoWPAN Border Router (6LBR):</dt>
+        <dd style="margin-left: 1.5em" id="section-3-3.6">
+          <p id="section-3-3.6.1">A border router located at the junction of separate 6LoWPAN networks or between a 6LoWPAN network and another IP network. There may be one or more 6LBRs at the 6LoWPAN network boundary. A 6LBR is the responsible authority for IPv6 prefix propagation for the 6LoWPAN network it is serving. An isolated LoWPAN also contains a 6LBR in the network that provides the prefix(es) for the isolated network.<a href="#section-3-3.6.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-3-3.7">Duplicate Address Detection (DAD):</dt>
+        <dd style="margin-left: 1.5em" id="section-3-3.8">
+          <p id="section-3-3.8.1">A mechanism used in IPv6 networks to ensure that no two devices share the same address, preventing address conflicts.<a href="#section-3-3.8.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-3-3.9">Static Context Header Compression and fragmentation (SCHC):</dt>
+        <dd style="margin-left: 1.5em" id="section-3-3.10">
+          <p id="section-3-3.10.1">A header compression and fragmentation framework defined in <span>[<a href="#RFC8724" class="cite xref">RFC8724</a>]</span>. It relies on a
+context that is known to both endpoints before a packet is sent, and elides the header
+fields whose values can be derived from that context.<a href="#section-3-3.10.1" class="pilcrow">¶</a></p>
+</dd>
+      <dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="Controller-area-network-overview">
+<section id="section-4">
+      <h2 id="name-controller-area-network-ove">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-controller-area-network-ove" class="section-name selfRef">Controller Area Network Overview</a>
+      </h2>
+<p id="section-4-1">This section provides a brief overview of Controller Area Network (CAN), as specified in <span>[<a href="#ISO11898-1" class="cite xref">ISO11898-1</a>]</span> and <span>[<a href="#ISO11898-2" class="cite xref">ISO11898-2</a>]</span>.
+CAN has two wires, CAN High and CAN Low.
+When a dominant (0) bit is transmitted, CAN High is driven to a higher voltage than CAN Low,
+so that the differential voltage between the two wires is nominally 2V.
+Both wires are at approximately the same level when a recessive (1) bit is transmitted, so
+that the differential voltage is nominally 0V. <span>[<a href="#ISO11898-2" class="cite xref">ISO11898-2</a>]</span> specifies the voltage levels.
+Because of the wired-AND structure, a dominant bit overrides a recessive bit.
+The CAN specification does not define any structure for the identifier.<a href="#section-4-1" class="pilcrow">¶</a></p>
+<p id="section-4-2">To resolve collisions in the arbitration field, a CAN controller checks for overridden recessive bits.
+The sender that was sending the recessive bit then stops the transmission.
+Therefore an identifier with all zeros has the highest priority.<a href="#section-4-2" class="pilcrow">¶</a></p>
+<p id="section-4-3">CAN controllers are usually able to filter frames by identifiers and only pass frames where the filter matches.
+The identifiers can be masked in order to define which bits of the identifier must match and which ones are ignored.<a href="#section-4-3" class="pilcrow">¶</a></p>
+<div id="iso-tp-overview">
+<section id="section-4.1">
+        <h3 id="name-iso-tp-overview">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-iso-tp-overview" class="section-name selfRef">ISO-TP Overview</a>
+        </h3>
+<p id="section-4.1-1">This section provides information about the use of ISO-TP (<span>[<a href="#ISO15765-2" class="cite xref">ISO15765-2</a>]</span>) in this document.
+Parts of ISO-TP are used to provide a reliable way for sending up to 4095 octets as a packet.
+It includes a flow-control mechanism for unicast-packets and timeouts.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1-2">Multicast packets do not use any flow-control mechanism and are therefore not covered by the ISO-TP standard.
+However, the fragmentation and reassembly mechanism is still used for multicast packets.<a href="#section-4.1-2" class="pilcrow">¶</a></p>
+<p id="section-4.1-3">ISO-TP defines four different types of frames: Single-Frames (SF), First-Frames (FF), Consecutive-Frames (CF), and Flow Control Frames (FC).
+Single-Frames are used when the payload data size is small enough to fit into a single CAN frame.
+For larger payload data sizes, a First-Frame indicates the start of the message, Consecutive-Frames carry the payload data and Flow Control Frames steer the transmission.
+Network address extension and packet size larger than 4095 octets defined by ISO 15765-2 MUST NOT be used for 6LoCAN.
+The 8-octet payload of a classical CAN frame is too small to carry a compressed IPv6 header
+together with the ISO-TP header, whereas the 64-octet payload of a CAN FD frame allows a small
+packet to be carried in a single Single-Frame. 6LoCAN therefore requires the CAN FD frame
+format; see <a href="#can-fd-sec" class="auto internal xref">Section 5.1</a>.<a href="#section-4.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="Spec-IPv6-over-CAN">
+<section id="section-5">
+      <h2 id="name-specification-of-ipv6-over-">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-specification-of-ipv6-over-" class="section-name selfRef">Specification of IPv6 over CAN</a>
+      </h2>
+<p id="section-5-1">CAN has a small frame payload and therefore does not tolerate much protocol overhead.
+This section specifies link-local IPv6 addresses and stateless IPv6 address autoconfiguration
+(see <a href="#addr-conf-sec" class="auto internal xref">Section 5.4</a> and <a href="#link-local-addr-sec" class="auto internal xref">Section 5.5</a>), Neighbor Discovery (see <a href="#nd-sec" class="auto internal xref">Section 5.6</a>),
+header compression (see <a href="#hc-sec" class="auto internal xref">Section 5.7</a>) and fragmentation (see <a href="#FAR-sec" class="auto internal xref">Section 5.9</a>), following the 6LoWPAN
+work of <span>[<a href="#RFC4944" class="cite xref">RFC4944</a>]</span> and <span>[<a href="#RFC6775" class="cite xref">RFC6775</a>]</span> where it applies to CAN.<a href="#section-5-1" class="pilcrow">¶</a></p>
+<div id="can-fd-sec">
+<section id="section-5.1">
+        <h3 id="name-can-fd-requirement">
+<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-can-fd-requirement" class="section-name selfRef">CAN FD Requirement</a>
+        </h3>
+<p id="section-5.1-1">A 6LoCAN node MUST support the CAN FD frame format specified in <span>[<a href="#ISO11898-1" class="cite xref">ISO11898-1</a>]</span>, and 6LoCAN
+packets MUST be carried in CAN FD frames.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+<p id="section-5.1-2">The reason is the payload size. A classical CAN frame carries at most 8 octets, of which the
+ISO-TP header already takes 1 to 3; what remains cannot hold a compressed IPv6 header, so every
+packet would have to be fragmented. A CAN FD frame carries up to 64 octets, which allows a
+small packet to be carried complete in a single ISO-TP Single-Frame.<a href="#section-5.1-2" class="pilcrow">¶</a></p>
+<p id="section-5.1-3">6LoCAN does not use classical CAN frames, and it does not use remote frames in either frame
+format (see <a href="#link-layer-duplicate-address-detection" class="auto internal xref">Section 5.3.4</a>).<a href="#section-5.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="IPv6-over-CAN-protocol-stack-sec">
+<section id="section-5.2">
+        <h3 id="name-protocol-stack">
+<a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-protocol-stack" class="section-name selfRef">Protocol Stack</a>
+        </h3>
+<p id="section-5.2-1"><a href="#IPv6-over-CAN-protocol-stack-fig" class="auto internal xref">Figure 1</a> illustrates the IPv6-over-CAN protocol stack. Upper-layer protocols can be transport-layer protocols
+(e.g., TCP and UDP), application-layer protocols, and other protocols capable of running on top of IPv6.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<span id="name-protocol-stack-for-ipv6-ove"></span><div id="IPv6-over-CAN-protocol-stack-fig">
+<figure id="figure-1">
+          <div class="alignLeft art-text artwork" id="section-5.2-2.1">
+<pre>
++----------------------------------------+
+|     Upper-Layer Protocols (CANopen)    |
++----------------------------------------+
+|                 IPv6                   |
++----------------------------------------+
+|   Adaptation Layer for IPv6 over CAN   |
++----------------------------------------+
+|   ISO-TP     |   CAN Data Link Layer   |
++----------------------------------------+
+|           CAN Physical Layer           |
++----------------------------------------+
+</pre>
+</div>
+<figcaption><a href="#figure-1" class="selfRef">Figure 1</a>:
+<a href="#name-protocol-stack-for-ipv6-ove" class="selfRef">Protocol Stack for IPv6 over CAN</a>
+          </figcaption></figure>
+</div>
+<p id="section-5.2-3">The Adaptation Layer for IPv6 over CAN supports Neighbor Discovery, stateless address
+autoconfiguration, header compression and fragmentation and reassembly.
+Unlike the 6LoWPAN header compression of <span>[<a href="#RFC6282" class="cite xref">RFC6282</a>]</span>, which compresses the IPv6 header and a
+small set of next headers, SCHC compresses any header for which the context holds a rule, so
+the compression is not limited to a fixed set of upper-layer protocols.<a href="#section-5.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="node-addr-scheme">
+<section id="section-5.3">
+        <h3 id="name-can-frame-identifiers">
+<a href="#section-5.3" class="section-number selfRef">5.3. </a><a href="#name-can-frame-identifiers" class="section-name selfRef">CAN Frame Identifiers</a>
+        </h3>
+<p id="section-5.3-1">This section provides information about the 14-bit node address to CAN identifier mapping.<a href="#section-5.3-1" class="pilcrow">¶</a></p>
+<p id="section-5.3-2">Because CAN uses identifiers to identify the frame's content, an addressing scheme is introduced to map node addresses to identifiers.
+Every node has a unique 14-bit address. This address is assigned either statically or randomly.
+The addressing scheme uses the 29-bit extended identifier only. It is a combination of a source address, a destination address, and a multicast bit.
+The multicast bit is at the highest bit-position, which causes the multicast traffic to have the lowest priority on the bus.<a href="#section-5.3-2" class="pilcrow">¶</a></p>
+<p id="section-5.3-3">The address 0x3DFE is reserved for link-layer duplicate address detection, and address 0x3DF0 is reserved for the Ethernet border translator.
+Addresses from 0x0100 to 0x3DEF are used as node addresses.
+Other addresses (0x0000 to 0x00FF and 0x3DF0 to 0x3FFF) are reserved or used for special purposes.
+Note that a lower address number has a higher priority on the bus.<a href="#section-5.3-3" class="pilcrow">¶</a></p>
+<p id="section-5.3-4">The ranges listed in <a href="#tab-address-ranges" class="auto internal xref">Table 1</a> apply to node addresses, that is, to the source
+address of every frame and to the destination address of unicast frames (see <a href="#unicast" class="auto internal xref">Section 5.3.1</a>).
+They do not apply to the destination address of multicast frames: that field carries the
+low-order 14 bits of the multicast group as specified in <a href="#multicast" class="auto internal xref">Section 5.3.2</a>, and the multicast bit
+distinguishes such a value from a node address.<a href="#section-5.3-4" class="pilcrow">¶</a></p>
+<p id="section-5.3-5">6LoCAN does not use the 11-bit standard identifiers. They may be used for other purposes.<a href="#section-5.3-5" class="pilcrow">¶</a></p>
+<span id="name-node-address-ranges"></span><div id="tab-address-ranges">
+<table class="center" id="table-1">
+          <caption>
+<a href="#table-1" class="selfRef">Table 1</a>:
+<a href="#name-node-address-ranges" class="selfRef">Node address ranges</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Address</th>
+              <th class="text-left" rowspan="1" colspan="1">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x3DFF - 0x3FFF</td>
+              <td class="text-left" rowspan="1" colspan="1">Reserved</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x3DFE</td>
+              <td class="text-left" rowspan="1" colspan="1">LLDAD</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x3DF1 - 0x3DFD</td>
+              <td class="text-left" rowspan="1" colspan="1">Reserved</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x3DF0</td>
+              <td class="text-left" rowspan="1" colspan="1">Ethernet Translator</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0100 - 0x3DEF</td>
+              <td class="text-left" rowspan="1" colspan="1">Node addresses</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">0x0000 - 0x00FF</td>
+              <td class="text-left" rowspan="1" colspan="1">Reserved</td>
+            </tr>
+          </tbody>
+        </table>
+</div>
+<span id="name-frame-identifier"></span><div id="fig-identifier-layout">
+<figure id="figure-2">
+          <div class="alignLeft art-text artwork" id="section-5.3-7.1">
+<pre>
+ 0|0            1|1            2|
+ 0|1            4|5            8|
++-+--------------+--------------+
+|M|     DEST     |     SRC      |
++-+--------------+--------------+
+</pre>
+</div>
+<figcaption><a href="#figure-2" class="selfRef">Figure 2</a>:
+<a href="#name-frame-identifier" class="selfRef">Frame Identifier</a>
+          </figcaption></figure>
+</div>
+<span class="break"></span><dl class="dlParallel" id="section-5.3-8">
+          <dt id="section-5.3-8.1">M:</dt>
+          <dd style="margin-left: 1.5em" id="section-5.3-8.2">
+            <p id="section-5.3-8.2.1">Multicast.<a href="#section-5.3-8.2.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-5.3-8.3">DEST:</dt>
+          <dd style="margin-left: 1.5em" id="section-5.3-8.4">
+            <p id="section-5.3-8.4.1">Destination Address (14 bits).<a href="#section-5.3-8.4.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-5.3-8.5">SRC:</dt>
+          <dd style="margin-left: 1.5em" id="section-5.3-8.6">
+            <p id="section-5.3-8.6.1">Source Address (14 bits).<a href="#section-5.3-8.6.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+</dl>
+<p id="section-5.3-9">For example, a destination of 0x3055 and source address of 0x3AAF result in the following identifier:<a href="#section-5.3-9" class="pilcrow">¶</a></p>
+<span id="name-unicast-frame-identifier-ex"></span><div id="fig-unicast-id">
+<figure id="figure-3">
+          <div class="alignLeft art-text artwork" id="section-5.3-10.1">
+<pre>
+ 0|0            1|1            2|
+ 0|1            4|5            8|
++-+--------------+--------------+
+|0|11000001010101|11101010101111|
++-+--------------+--------------+
+</pre>
+</div>
+<figcaption><a href="#figure-3" class="selfRef">Figure 3</a>:
+<a href="#name-unicast-frame-identifier-ex" class="selfRef">Unicast frame identifier example</a>
+          </figcaption></figure>
+</div>
+<p id="section-5.3-11">A multicast group of 1 and a source address of 0x3AAF result in the following identifier:<a href="#section-5.3-11" class="pilcrow">¶</a></p>
+<span id="name-multicast-frame-identifier-"></span><div id="fig-multicast-id">
+<figure id="figure-4">
+          <div class="alignLeft art-text artwork" id="section-5.3-12.1">
+<pre>
+ 0|0            1|1            2|
+ 0|1            4|5            8|
++-+--------------+--------------+
+|1|00000000000001|11101010101111|
++-+--------------+--------------+
+</pre>
+</div>
+<figcaption><a href="#figure-4" class="selfRef">Figure 4</a>:
+<a href="#name-multicast-frame-identifier-" class="selfRef">Multicast frame identifier example</a>
+          </figcaption></figure>
+</div>
+<div id="unicast">
+<section id="section-5.3.1">
+          <h4 id="name-unicast-frame-identifier">
+<a href="#section-5.3.1" class="section-number selfRef">5.3.1. </a><a href="#name-unicast-frame-identifier" class="section-name selfRef">Unicast Frame Identifier</a>
+          </h4>
+<p id="section-5.3.1-1">For unicast packets, the multicast bit is set to zero, and the 14-bit source address is the address of the sender.
+The 14-bit destination address of the receiver is discovered by IPv6 NDP defined in <span>[<a href="#RFC4861" class="cite xref">RFC4861</a>]</span>.
+Every node MUST be able to receive all frames targeting its address as the destination address.<a href="#section-5.3.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="multicast">
+<section id="section-5.3.2">
+          <h4 id="name-multicast-frame-identifier">
+<a href="#section-5.3.2" class="section-number selfRef">5.3.2. </a><a href="#name-multicast-frame-identifier" class="section-name selfRef">Multicast Frame Identifier</a>
+          </h4>
+<p id="section-5.3.2-1">For multicast packets, the multicast bit is set to one, and the 14-bit source address is the address of the sender.
+The 14-bit destination address is the last 14 bits of the multicast group.
+Every node MUST be able to receive all frames matching the last 14 bits of all joined multicast groups as the destination address.<a href="#section-5.3.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="address-generation">
+<section id="section-5.3.3">
+          <h4 id="name-node-address-generation">
+<a href="#section-5.3.3" class="section-number selfRef">5.3.3. </a><a href="#name-node-address-generation" class="section-name selfRef">Node Address Generation</a>
+          </h4>
+<p id="section-5.3.3-1">Every node has a 14-bit address. This address MUST be unique within the CAN bus segment.
+The address can either be statically defined or assigned randomly.
+For the random address assignment, the node tries randomly chosen addresses until the link-layer duplicate address detection succeeds.
+The link-layer duplicate address detection prevents nodes from assigning an address already in use.<a href="#section-5.3.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="link-layer-duplicate-address-detection">
+<section id="section-5.3.4">
+          <h4 id="name-link-layer-duplicate-addres">
+<a href="#section-5.3.4" class="section-number selfRef">5.3.4. </a><a href="#name-link-layer-duplicate-addres" class="section-name selfRef">Link-Layer Duplicate Address Detection</a>
+          </h4>
+<p id="section-5.3.4-1">This section provides information about how to perform link-layer duplicate address detection (LLDAD).<a href="#section-5.3.4-1" class="pilcrow">¶</a></p>
+<p id="section-5.3.4-2">LLDAD is introduced to prevent collisions of CAN identifiers and makes it possible to use random
+address assignment with only 14 bits of address space.
+To perform an LLDAD, a LLDAD-request is sent. If no DAD-response is received, the LLDAD is
+considered successful and the node may start using the candidate address.<a href="#section-5.3.4-2" class="pilcrow">¶</a></p>
+<p id="section-5.3.4-3">An LLDAD-request is a frame with a data length of zero whose destination address is the candidate
+address and whose source address is a randomly chosen 14-bit value.
+A DAD-response is a frame with a data length of zero whose destination address is the LLDAD
+address (0x3DFE) and whose source address is the address that is already in use.<a href="#section-5.3.4-3" class="pilcrow">¶</a></p>
+<p id="section-5.3.4-4">A data length of zero identifies both frames. A 6LoCAN packet always starts with an ISO-TP header
+of at least one octet (see <a href="#sec-frame-format" class="auto internal xref">Section 5.11</a>), so a frame with no data cannot be mistaken for
+one. Earlier versions of this specification used remote frames for the LLDAD-request. Remote
+frames are not used, because the CAN FD frame format does not provide them and because support for
+them in classical CAN controllers is uneven.<a href="#section-5.3.4-4" class="pilcrow">¶</a></p>
+<p id="section-5.3.4-5">The random source address of an LLDAD-request distinguishes requests that are sent for the same
+candidate address at the same time. It is not a node address, and the ranges in
+<a href="#tab-address-ranges" class="auto internal xref">Table 1</a> do not apply to it.<a href="#section-5.3.4-5" class="pilcrow">¶</a></p>
+<p id="section-5.3.4-6">A node MUST be able to receive frames whose destination address is the candidate address before it
+sends the first LLDAD-request, and frames whose destination address is the LLDAD address for as
+long as an LLDAD is in progress. The ability to receive frames addressed to the node address MUST
+be retained for as long as the node uses that address, so that the node can answer later LLDAD
+requests for it.<a href="#section-5.3.4-6" class="pilcrow">¶</a></p>
+<p id="section-5.3.4-7">A node that receives an LLDAD-request whose destination address is an address it already uses MUST
+send a DAD-response within 100 ms of receiving the request.<a href="#section-5.3.4-7" class="pilcrow">¶</a></p>
+<p id="section-5.3.4-8">A node performing an LLDAD MUST wait at least 100 ms for a DAD-response. The 100 ms value allows a
+responding node to be scheduled and to win bus arbitration on a loaded bus; it is not derived from
+a CAN timing parameter.<a href="#section-5.3.4-8" class="pilcrow">¶</a></p>
+<p id="section-5.3.4-9">While an LLDAD is in progress, a node that receives an LLDAD-request whose destination address is
+its own candidate address, and whose source address differs from the one it used itself, MUST
+abandon the candidate address. This resolves the case of two nodes probing the same address at the
+same time, which neither would otherwise detect, because a DAD-response is sent only by a node that
+already uses the address.<a href="#section-5.3.4-9" class="pilcrow">¶</a></p>
+<p id="section-5.3.4-10">A node whose LLDAD fails, or that abandons a candidate address under the rule above, MUST select a
+new candidate address and repeat the procedure. A node that selects candidate addresses randomly
+MUST choose each new candidate independently from the node address range of
+<a href="#tab-address-ranges" class="auto internal xref">Table 1</a>, and SHOULD delay the next attempt by a random interval of up to 100 ms, so
+that two nodes that collided do not collide again. An implementation SHOULD limit the number of
+attempts and report a failure to configure a node address rather than retrying indefinitely.<a href="#section-5.3.4-10" class="pilcrow">¶</a></p>
+<p id="section-5.3.4-11"><a href="#fig-dad-fail" class="auto internal xref">Figure 5</a> shows a DAD Fail example where node A performs a LLDAD-request on address 0x3055 where this address is already in use by node B.<a href="#section-5.3.4-11" class="pilcrow">¶</a></p>
+<span id="name-dad-fail-example"></span><div id="fig-dad-fail">
+<figure id="figure-5">
+            <div class="alignLeft art-text artwork" id="section-5.3.4-12.1">
+<pre>
+    Node A            Node B
+       |--LLDAD-request-&gt;|
+       |                 |
+       |&lt;-LLDAD-response-|
+
+LLDAD-request identifier (data length zero):
+ 0|0            1|1            2|
+ 0|1            4|5            8|
++-+--------------+--------------+
+|0|11000001010101|    random    |
++-+--------------+--------------+
+
+DAD-response identifier (data length zero):
+ 0|0            1|1            2|
+ 0|1            4|5            8|
++-+--------------+--------------+
+|0|11110111111110|11000001010101|
++-+--------------+--------------+
+</pre>
+</div>
+<figcaption><a href="#figure-5" class="selfRef">Figure 5</a>:
+<a href="#name-dad-fail-example" class="selfRef">DAD Fail example</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="addr-conf-sec">
+<section id="section-5.4">
+        <h3 id="name-stateless-address-autoconfi">
+<a href="#section-5.4" class="section-number selfRef">5.4. </a><a href="#name-stateless-address-autoconfi" class="section-name selfRef">Stateless Address Autoconfiguration</a>
+        </h3>
+<p id="section-5.4-1">This section defines how to obtain an IPv6 Interface Identifier.<a href="#section-5.4-1" class="pilcrow">¶</a></p>
+<p id="section-5.4-2">The Interface Identifier for link-local addresses SHOULD be formed by taking the node address
+and zero filling it to the left.
+The resulting value is an IID in the sense of <span>[<a href="#RFC7136" class="cite xref">RFC7136</a>]</span> and carries no embedded meaning
+beyond the node address.
+For example, an address of hexadecimal value 0x3AAF results in the following IID:<a href="#section-5.4-2" class="pilcrow">¶</a></p>
+<span id="name-iid-from-address-0x3aaf"></span><div id="fig-generate-iid">
+<figure id="figure-6">
+          <div class="alignLeft art-text artwork" id="section-5.4-3.1">
+<pre>
+|0              1|1              3|3              4|4              6|
+|0              5|6              1|2              7|8              3|
++----------------+----------------+----------------+----------------+
+|0000000000000000|0000000000000000|0000000000000000|0011101010101111|
++----------------+----------------+----------------+----------------+
+</pre>
+</div>
+<figcaption><a href="#figure-6" class="selfRef">Figure 6</a>:
+<a href="#name-iid-from-address-0x3aaf" class="selfRef">IID from Address 0x3AAF</a>
+          </figcaption></figure>
+</div>
+<p id="section-5.4-4">Deriving the IID from the node address allows a SCHC rule to elide it. <span>[<a href="#RFC8724" class="cite xref">RFC8724</a>]</span> defines the
+DEVIID and APPIID compression/decompression actions, which rebuild an interface identifier from
+the device identifier of the link. On a 6LoCAN segment that identifier is the node address,
+which the receiver already has from the CAN frame identifier of the frame it is processing.
+An IID that cannot be rebuilt in this way has to be sent as part of the compression residue,
+which costs 8 octets in every packet that carries it. On a link whose frames carry at most
+64 octets of payload, this is the difference between a usefully compressed header and an
+uncompressed one.<a href="#section-5.4-4" class="pilcrow">¶</a></p>
+<p id="section-5.4-5"><span>[<a href="#RFC8064" class="cite xref">RFC8064</a>]</span> recommends that stable IIDs be generated with the method of <span>[<a href="#RFC7217" class="cite xref">RFC7217</a>]</span> rather
+than from a link-layer address. The link-local IID defined above is a deliberate deviation
+from that recommendation, made for the header compression reason given above; its privacy
+properties are discussed in <a href="#security-considerations" class="auto internal xref">Section 9</a>.
+For addresses other than link-local addresses, a 6LoCAN node SHOULD generate IIDs as
+described in <span>[<a href="#RFC7217" class="cite xref">RFC7217</a>]</span>. Such IIDs cannot be rebuilt with DEVIID or APPIID and are carried
+as part of the compression residue.<a href="#section-5.4-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="link-local-addr-sec">
+<section id="section-5.5">
+        <h3 id="name-ipv6-link-local-address">
+<a href="#section-5.5" class="section-number selfRef">5.5. </a><a href="#name-ipv6-link-local-address" class="section-name selfRef">IPv6 Link-Local Address</a>
+        </h3>
+<p id="section-5.5-1">The IPv6 link-local address <span>[<a href="#RFC4291" class="cite xref">RFC4291</a>]</span> for a 6LoCAN interface is formed by appending the Interface Identifier, as defined above, to the prefix FE80::/64.<a href="#section-5.5-1" class="pilcrow">¶</a></p>
+<span id="name-link-local-address-from-iid"></span><div id="fig-link-local-address">
+<figure id="figure-7">
+          <div class="alignLeft art-text artwork" id="section-5.5-2.1">
+<pre>
+  10 bits            54 bits                  64 bits
++----------+-----------------------+----------------------------+
+|1111111010|         (zeros)       |    Interface Identifier    |
++----------+-----------------------+----------------------------+
+</pre>
+</div>
+<figcaption><a href="#figure-7" class="selfRef">Figure 7</a>:
+<a href="#name-link-local-address-from-iid" class="selfRef">Link-Local address from IID</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="nd-sec">
+<section id="section-5.6">
+        <h3 id="name-neighbor-discovery">
+<a href="#section-5.6" class="section-number selfRef">5.6. </a><a href="#name-neighbor-discovery" class="section-name selfRef">Neighbor Discovery</a>
+        </h3>
+<p id="section-5.6-1">A 6LoCAN bus segment is a single link. Every node attached to the segment can reach every
+other node of that segment directly, and nodes do not forward packets between each other
+within a segment.<a href="#section-5.6-1" class="pilcrow">¶</a></p>
+<p id="section-5.6-2">Neighbor Discovery for IPv6 <span>[<a href="#RFC4861" class="cite xref">RFC4861</a>]</span> is used for address resolution and for neighbor
+unreachability detection. The Source/Target Link-Layer Address option carries the 14-bit
+node address in the form specified in <a href="#unicasting-sec" class="auto internal xref">Section 5.10.1</a>.<a href="#section-5.6-2" class="pilcrow">¶</a></p>
+<p id="section-5.6-3">The Neighbor Discovery optimizations for 6LoWPANs <span>[<a href="#RFC6775" class="cite xref">RFC6775</a>]</span> <span>[<a href="#RFC8505" class="cite xref">RFC8505</a>]</span> address
+route-over, multi-hop topologies in which multicast is expensive or unreliable.
+Because a 6LoCAN segment is a single link and CAN provides a multicast mechanism
+(see <a href="#multicast" class="auto internal xref">Section 5.3.2</a>), these optimizations are not required within a segment.
+Connectivity between a 6LoCAN segment and other links is provided by the Ethernet Border
+Translator (see <a href="#translator-sec" class="auto internal xref">Section 6</a>) rather than by a 6LBR.<a href="#section-5.6-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="hc-sec">
+<section id="section-5.7">
+        <h3 id="name-header-compression">
+<a href="#section-5.7" class="section-number selfRef">5.7. </a><a href="#name-header-compression" class="section-name selfRef">Header Compression</a>
+        </h3>
+<p id="section-5.7-1">6LoCAN uses Static Context Header Compression (SCHC) <span>[<a href="#RFC8724" class="cite xref">RFC8724</a>]</span> to compress headers.
+A 6LoCAN node MUST implement the SCHC compression and decompression of <span>[<a href="#RFC8724" class="cite xref">RFC8724</a>]</span>.<a href="#section-5.7-1" class="pilcrow">¶</a></p>
+<p id="section-5.7-2">Only the compression part of <span>[<a href="#RFC8724" class="cite xref">RFC8724</a>]</span> is used. The SCHC fragmentation and reassembly
+mechanism is not used; fragmentation is provided by ISO-TP, for the reasons given in
+<a href="#FAR-sec" class="auto internal xref">Section 5.9</a>.<a href="#section-5.7-2" class="pilcrow">¶</a></p>
+<p id="section-5.7-3">Earlier versions of this specification used the 6LoWPAN header compression of <span>[<a href="#RFC6282" class="cite xref">RFC6282</a>]</span>.
+SCHC is used instead because it compresses the headers of the upper-layer protocols that a
+6LoCAN node actually carries, not only the IPv6 header, and because a rule set can be written
+for the small and largely static set of flows that an installation of the kind described in
+<a href="#applicability-sec" class="auto internal xref">Section 2</a> runs. <span>[<a href="#RFC6282" class="cite xref">RFC6282</a>]</span> is not used by this specification.<a href="#section-5.7-3" class="pilcrow">¶</a></p>
+<div id="schc-context-sec">
+<section id="section-5.7.1">
+          <h4 id="name-schc-context">
+<a href="#section-5.7.1" class="section-number selfRef">5.7.1. </a><a href="#name-schc-context" class="section-name selfRef">SCHC Context</a>
+          </h4>
+<p id="section-5.7.1-1">SCHC compresses a header by matching it against a rule in a context that both ends hold before
+a packet is sent. On a 6LoCAN segment the context is a property of the installation: the set of
+flows is fixed when the equipment is commissioned.<a href="#section-5.7.1-1" class="pilcrow">¶</a></p>
+<p id="section-5.7.1-2">How the context is provisioned is out of scope for this document. It MAY be built into the
+nodes, provisioned together with the node addresses, or distributed by the Ethernet Border
+Translator of <a href="#translator-sec" class="auto internal xref">Section 6</a>.<a href="#section-5.7.1-2" class="pilcrow">¶</a></p>
+<p id="section-5.7.1-3">All nodes on a bus segment, and the Ethernet Border Translator, MUST hold the same context.
+6LoCAN provides no mechanism to negotiate or to verify a context, and a node that decompresses
+a packet with a rule other than the one used to compress it will deliver a corrupted packet.<a href="#section-5.7.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="schc-ruleid-sec">
+<section id="section-5.7.2">
+          <h4 id="name-rule-identifiers">
+<a href="#section-5.7.2" class="section-number selfRef">5.7.2. </a><a href="#name-rule-identifiers" class="section-name selfRef">Rule Identifiers</a>
+          </h4>
+<p id="section-5.7.2-1">The Rule ID size is a parameter of the context. For 6LoCAN it MUST be 8 bits.<a href="#section-5.7.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.7.2-2">An 8-bit Rule ID costs one octet in every compressed packet and allows 256 rules in a segment,
+which is more than the number of distinct flows expected in the installations of
+<a href="#applicability-sec" class="auto internal xref">Section 2</a>. A smaller Rule ID would not save an octet, because the compression
+residue is octet-aligned in the frame layout of <a href="#sec-frame-format" class="auto internal xref">Section 5.11</a>.<a href="#section-5.7.2-2" class="pilcrow">¶</a></p>
+<p id="section-5.7.2-3">The assignment of rules to Rule IDs is part of the context and therefore out of scope.<a href="#section-5.7.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="schc-15dot4-sec">
+<section id="section-5.7.3">
+          <h4 id="name-relationship-to-schc-over-i">
+<a href="#section-5.7.3" class="section-number selfRef">5.7.3. </a><a href="#name-relationship-to-schc-over-i" class="section-name selfRef">Relationship to SCHC over IEEE 802.15.4</a>
+          </h4>
+<p id="section-5.7.3-1"><span>[<a href="#I-D.ietf-6lo-schc-15dot4" class="cite xref">I-D.ietf-6lo-schc-15dot4</a>]</span> profiles SCHC for IEEE 802.15.4. The parts of that profile that
+concern the compression of IPv6 and UDP headers apply unchanged to 6LoCAN. The parts that
+concern SCHC fragmentation do not apply, because 6LoCAN fragments with ISO-TP.<a href="#section-5.7.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="mtu-sec">
+<section id="section-5.8">
+        <h3 id="name-maximum-transmission-unit">
+<a href="#section-5.8" class="section-number selfRef">5.8. </a><a href="#name-maximum-transmission-unit" class="section-name selfRef">Maximum Transmission Unit</a>
+        </h3>
+<p id="section-5.8-1">IPv6 requires every link to have an MTU of 1280 octets or greater <span>[<a href="#RFC8200" class="cite xref">RFC8200</a>]</span>.
+The subset of ISO-TP used in this document (see <a href="#FAR-sec" class="auto internal xref">Section 5.9</a>) carries up to 4095 octets
+per packet and therefore satisfies this requirement.<a href="#section-5.8-1" class="pilcrow">¶</a></p>
+<p id="section-5.8-2">The MTU of a 6LoCAN bus segment MUST be at least 1280 octets and MUST NOT exceed
+4095 octets. Implementations SHOULD use an MTU of 1280 octets.
+All nodes attached to the same bus segment MUST use the same MTU; 6LoCAN provides no
+mechanism to negotiate the MTU on a per-node basis.<a href="#section-5.8-2" class="pilcrow">¶</a></p>
+<p id="section-5.8-3">A larger MTU increases the reassembly buffer that every receiving node has to provide
+and the number of CAN frames that a single IPv6 packet occupies.
+Because ISO-TP transfers are interleaved with other bus traffic at frame granularity,
+a long transfer does not block frames of higher priority, but it does increase the
+latency of traffic whose identifiers have a lower priority than the transfer.
+An MTU larger than 1280 octets SHOULD therefore be used only where the resulting bus
+occupancy is acceptable for the application.<a href="#section-5.8-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="FAR-sec">
+<section id="section-5.9">
+        <h3 id="name-fragmentation-and-reassembl">
+<a href="#section-5.9" class="section-number selfRef">5.9. </a><a href="#name-fragmentation-and-reassembl" class="section-name selfRef">Fragmentation and Reassembly Considerations</a>
+        </h3>
+<p id="section-5.9-1">A subset of ISO-TP (ISO 15765-2) is used to fragment and reassemble the packets.
+This subset of ISO-TP can send packets with a payload size of up to 4095 octets, enough for IPv6 minimum MTU size of 1280 octets.
+ISO-TP is designed for CAN and its small payload data size and therefore preferred over <span>[<a href="#RFC4944" class="cite xref">RFC4944</a>]</span> fragmentation.<a href="#section-5.9-1" class="pilcrow">¶</a></p>
+<p id="section-5.9-2">The 6LoWPAN fragmentation would use more than the half of the available payload for the fragmentation headers.
+This fact prevents 6LoWPAN fragmentation from being used for 6LoCAN.<a href="#section-5.9-2" class="pilcrow">¶</a></p>
+<p id="section-5.9-3"><span>[<a href="#RFC8724" class="cite xref">RFC8724</a>]</span> also defines a fragmentation and reassembly mechanism. 6LoCAN does not use it.
+ISO-TP is the mechanism that CAN deployments already use: it is specified for CAN in
+<span>[<a href="#ISO15765-2" class="cite xref">ISO15765-2</a>]</span>, it is widely implemented in CAN controllers and protocol stacks, and its flow
+control and timeout behaviour are defined in terms of CAN. Using it lets a 6LoCAN node share
+the segmentation implementation that the installation already contains.<a href="#section-5.9-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="addr-map-sec">
+<section id="section-5.10">
+        <h3 id="name-ipv6-address-mapping">
+<a href="#section-5.10" class="section-number selfRef">5.10. </a><a href="#name-ipv6-address-mapping" class="section-name selfRef">IPv6 Address Mapping</a>
+        </h3>
+<div id="unicasting-sec">
+<section id="section-5.10.1">
+          <h4 id="name-unicast-address-mapping">
+<a href="#section-5.10.1" class="section-number selfRef">5.10.1. </a><a href="#name-unicast-address-mapping" class="section-name selfRef">Unicast Address Mapping</a>
+          </h4>
+<p id="section-5.10.1-1">The address resolution procedure for mapping IPv6 non-multicast addresses into CAN Data link layer Addresses (Node addresses) follows the general description in
+Sections 4.6.1 and 7.2 of <span>[<a href="#RFC4861" class="cite xref">RFC4861</a>]</span>, unless otherwise specified.<a href="#section-5.10.1-1" class="pilcrow">¶</a></p>
+<p id="section-5.10.1-2">The Source/Target Link-Layer Address option has the following form when the addresses are 14-bit CAN Data Link Layer Addresses.<a href="#section-5.10.1-2" class="pilcrow">¶</a></p>
+<span id="name-ipv6-unicast-address-mappin"></span><div id="unicasting-fig">
+<figure id="figure-8">
+            <div class="alignLeft art-text artwork" id="section-5.10.1-3.1">
+<pre>
+ 0                   1
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      Type     |   Length=1    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                               |
++-     Padding (all zeros)     -+
+|                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|Rsv| CAN Data Link-Layer Addr. |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+</pre>
+</div>
+<figcaption><a href="#figure-8" class="selfRef">Figure 8</a>:
+<a href="#name-ipv6-unicast-address-mappin" class="selfRef">IPv6 Unicast Address Mapping</a>
+            </figcaption></figure>
+</div>
+<p id="section-5.10.1-4">Option fields:<a href="#section-5.10.1-4" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-5.10.1-5">
+            <dt id="section-5.10.1-5.1">Type:</dt>
+            <dd style="margin-left: 2.0em" id="section-5.10.1-5.2">
+              <p id="section-5.10.1-5.2.1">1: This is for the Source Link-Layer Address.
+2: This is for the Target Link-Layer Address.<a href="#section-5.10.1-5.2.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-5.10.1-5.3">Length:</dt>
+            <dd style="margin-left: 2.0em" id="section-5.10.1-5.4">
+              <p id="section-5.10.1-5.4.1">This is the length of this option (including the Type and Length fields) in units of 8 octets. The value of this field is 1 for 14-bit CAN Data Link Layer addresses.<a href="#section-5.10.1-5.4.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-5.10.1-5.5">Rsv:</dt>
+            <dd style="margin-left: 2.0em" id="section-5.10.1-5.6">
+              <p id="section-5.10.1-5.6.1">Reserved. 2 bits. These bits MUST be set to zero by the sender and MUST be ignored by the
+receiver.<a href="#section-5.10.1-5.6.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-5.10.1-5.7">CAN Data Link-Layer Address:</dt>
+            <dd style="margin-left: 2.0em" id="section-5.10.1-5.8">
+              <p id="section-5.10.1-5.8.1">The 14-bit node address of the sender (Source Link-Layer Address) or of the target
+(Target Link-Layer Address).<a href="#section-5.10.1-5.8.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="multicast-map-sec">
+<section id="section-5.10.2">
+          <h4 id="name-multicast-address-mapping">
+<a href="#section-5.10.2" class="section-number selfRef">5.10.2. </a><a href="#name-multicast-address-mapping" class="section-name selfRef">Multicast Address Mapping</a>
+          </h4>
+<p id="section-5.10.2-1">CAN has no link-layer multicast address. An IPv6 multicast address is therefore mapped
+directly onto a frame identifier: the multicast bit is set and the destination field carries
+the low-order 14 bits of the multicast group, as specified in <a href="#multicast" class="auto internal xref">Section 5.3.2</a>.
+No link-layer address resolution is performed for a multicast destination, and the
+Source/Target Link-Layer Address option is not used for one.<a href="#section-5.10.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.10.2-2">Because the CAN data link layer does not provide multicast, ISO-TP is used for multicast
+frames without its flow control mechanism; see <a href="#iso-tp-overview" class="auto internal xref">Section 4.1</a> and <a href="#FAR-sec" class="auto internal xref">Section 5.9</a>.<a href="#section-5.10.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="sec-frame-format">
+<section id="section-5.11">
+        <h3 id="name-frame-format">
+<a href="#section-5.11" class="section-number selfRef">5.11. </a><a href="#name-frame-format" class="section-name selfRef">Frame Format</a>
+        </h3>
+<p id="section-5.11-1">This section provides information about data arrangement in the frame data field.<a href="#section-5.11-1" class="pilcrow">¶</a></p>
+<p id="section-5.11-2">The first octets of a CAN frame always contain the ISO-TP header. In the first frame of a packet
+the ISO-TP header is followed by the SCHC packet of <span>[<a href="#RFC8724" class="cite xref">RFC8724</a>]</span>: a Rule ID, then the compression
+residue, then the payload. The SCHC packet may be spread over several frames.<a href="#section-5.11-2" class="pilcrow">¶</a></p>
+<span id="name-6locan-frame-format"></span><div id="fig-frame-format">
+<figure id="figure-9">
+          <div class="alignLeft art-text artwork" id="section-5.11-3.1">
+<pre>
++-----------------------------------------+
+| ISO-TP Header (1-3 octets)              |
++-----------------------------------------+
+| SCHC Rule ID (1 octet)                  |
++-----------------------------------------+
+| Compression Residue (0 or more octets)  |
++-----------------------------------------+
+| Payload                                 |
++-----------------------------------------+
+</pre>
+</div>
+<figcaption><a href="#figure-9" class="selfRef">Figure 9</a>:
+<a href="#name-6locan-frame-format" class="selfRef">6LoCAN Frame Format</a>
+          </figcaption></figure>
+</div>
+<p id="section-5.11-4">The Rule ID is one octet (see <a href="#schc-ruleid-sec" class="auto internal xref">Section 5.7.2</a>). The size of the compression residue depends
+on the rule that matched: it is empty when the rule elides every field, and otherwise it carries
+the fields that the rule sends, in the order in which the rule lists them. The residue is padded
+at its end so that the payload starts on an octet boundary, as described in Section 5 of
+<span>[<a href="#RFC8724" class="cite xref">RFC8724</a>]</span>; for 6LoCAN the L2 word is one octet.<a href="#section-5.11-4" class="pilcrow">¶</a></p>
+<p id="section-5.11-5">Packets with a destination or source address of the 0x3DF0 (Translator address) carry the Ethernet MAC address inline directly after the ISO-TP Header.
+For packets destined for the translator, it is the destination MAC address, and for packets originated by the translator, it is the source MAC address.<a href="#section-5.11-5" class="pilcrow">¶</a></p>
+<span id="name-6locan-translator-frame-for"></span><div id="fig-frame-format-translator">
+<figure id="figure-10">
+          <div class="alignLeft art-text artwork" id="section-5.11-6.1">
+<pre>
++-----------------------------------------+
+| ISO-TP Header (1-3 octets)              |
++-----------------------------------------+
+| Ethernet MAC Address (48 bits)          |
++-----------------------------------------+
+| SCHC Rule ID (1 octet)                  |
++-----------------------------------------+
+| Compression Residue (0 or more octets)  |
++-----------------------------------------+
+| Payload                                 |
++-----------------------------------------+
+</pre>
+</div>
+<figcaption><a href="#figure-10" class="selfRef">Figure 10</a>:
+<a href="#name-6locan-translator-frame-for" class="selfRef">6LoCAN Translator Frame Format</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="translator-sec">
+<section id="section-6">
+      <h2 id="name-ethernet-border-translator">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-ethernet-border-translator" class="section-name selfRef">Ethernet Border Translator</a>
+      </h2>
+<p id="section-6-1">This section specifies how 6LoCAN packets are translated to and from Ethernet frames.<a href="#section-6-1" class="pilcrow">¶</a></p>
+<p id="section-6-2">The Ethernet Border Translator connects 6LoCAN bus-segments either to other 6LoCAN bus-segments or other technologies.
+Ethernet is a widely used technology that provides enough bandwidth to connect several 6LoCAN segments.
+A mechanism like the 6LBR is not necessary because there is no routing on 6LoCAN segments.
+To provide routing or switching capabilities, the Ethernet Border Translator connects a 6LoCAN network to such devices via Ethernet.<a href="#section-6-2" class="pilcrow">¶</a></p>
+<p id="section-6-3">Bus segments MUST NOT have more than one translator. The translator has a fixed node address (0x3DF0) and a range of Ethernet MAC addresses.
+Every packet sent to this node address or any multicast address is forwarded to Ethernet.
+Every Ethernet frame matching the MAC address range and every multicast Ethernet frame is forwarded to the 6LoCAN bus-segment.<a href="#section-6-3" class="pilcrow">¶</a></p>
+<p id="section-6-4">For translating a 6LoCAN packet to an Ethernet frame, the source address is extended with a 34 bits MAC address prefix, and the SCHC-compressed headers are decompressed.
+The 34 bits prefix MUST be chosen in a way that the resulting 48-bit MAC address forms a locally administered address that is unique on the link.
+The destination MAC is carried in-line before the compressed IPv6 header (see <a href="#sec-frame-format" class="auto internal xref">Section 5.11</a>, <a href="#fig-frame-format-translator" class="auto internal xref">Figure 10</a>).
+ICMPv6 messages MUST be checked for Link-Layer Address Options (LLAO), and if an LLAO is present, it MUST be changed to the extended link-layer address.
+For translating Ethernet frames to 6LoCAN packets, the source MAC address is carried in-line, the destination node address is the last 14 bits of the MAC address, and the headers are compressed using SCHC.<a href="#section-6-4" class="pilcrow">¶</a></p>
+<p id="section-6-5">The Neighbor Caches of the networking stack must be able to store link-layer addresses with a size of 14 and 48 bits.<a href="#section-6-5" class="pilcrow">¶</a></p>
+<p id="section-6-6">For multicast Ethernet frames, the last 14 bits of the multicast group is the destination address, and the multicast bit is set. The destination address MAY also be reconstructed from the destination multicast address.
+The destination Ethernet MAC address is formed from the destination IP address as described in <span>[<a href="#RFC2464" class="cite xref">RFC2464</a>]</span> section 7.<a href="#section-6-6" class="pilcrow">¶</a></p>
+<p id="section-6-7">If the translator includes a network stack, the translator MUST NOT use a MAC address within the ranges used for translation, with the following exception:
+The translator MAY use the extended MAC address that corresponds to the translator node address.<a href="#section-6-7" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="connection-scenario-sec">
+<section id="section-7">
+      <h2 id="name-internet-connectivity-scena">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-internet-connectivity-scena" class="section-name selfRef">Internet Connectivity Scenarios</a>
+      </h2>
+<p id="section-7-1">This section shows an example of a 6LoCAN segment connected to an Ethernet network and
+examples of the address translations specified in <a href="#translator-sec" class="auto internal xref">Section 6</a>.<a href="#section-7-1" class="pilcrow">¶</a></p>
+<p id="section-7-2"><a href="#fig-translator-setup" class="auto internal xref">Figure 14</a> shows an example setup of a 6LoCAN segment connected to an Ethernet network.<a href="#section-7-2" class="pilcrow">¶</a></p>
+<p id="section-7-3"><a href="#fig-unicast-mac-translation" class="auto internal xref">Figure 11</a> shows a translation from Ethernet MAC to CAN identifier.
+The source (src) MAC address is carried in-line in the CAN frame data.
+The 34-bit MAC address prefix for this example is 02:00:5E:10 followed by two zero bits,
+written as 02:00:5E:10:00/34.<a href="#section-7-3" class="pilcrow">¶</a></p>
+<span id="name-example-address-translation"></span><div id="fig-unicast-mac-translation">
+<figure id="figure-11">
+        <div class="alignLeft art-text artwork" id="section-7-4.1">
+<pre>
+|0                            4|4                              9
+|0                            7|8                              5
++------------------------------+-------------------------------+
+| dest MAC (02:00:5E:10:30:55) |  src MAC (02:00:5E:10:00:FF)  |
++------------------------------+-------------------------------+
+                          Ethernet MAC
+
+ 0|0            1|1            2|
+ 0|1            4|5            8|
++-+--------------+--------------+
+|0|dest (0x3055) | src (0x3DF0) |
++-+--------------+--------------+
+            CAN identifier
+</pre>
+</div>
+<figcaption><a href="#figure-11" class="selfRef">Figure 11</a>:
+<a href="#name-example-address-translation" class="selfRef">Example address translation from Ethernet MAC to CAN identifier.</a>
+        </figcaption></figure>
+</div>
+<p id="section-7-5"><a href="#fig-multicast-mac-translation" class="auto internal xref">Figure 12</a> shows a translation from a multicast Ethernet MAC to CAN identifier.
+The source MAC address is carried in-line in the CAN frame data.<a href="#section-7-5" class="pilcrow">¶</a></p>
+<span id="name-example-address-translation-"></span><div id="fig-multicast-mac-translation">
+<figure id="figure-12">
+        <div class="alignLeft art-text artwork" id="section-7-6.1">
+<pre>
+|0                            4|4                             9|
+|0                            7|8                             5|
++------------------------------+-------------------------------+
+| dest MAC (33:33:00:01:00:01) |  src MAC (02:00:5E:10:00:FF)  |
++------------------------------+-------------------------------+
+                          Ethernet MAC
+
+ 0|0            1|1            2|
+ 0|1            4|5            8|
++-+--------------+--------------+
+|1|dest (0x0001) | src (0x3DF0) |
++-+--------------+--------------+
+            CAN identifier
+</pre>
+</div>
+<figcaption><a href="#figure-12" class="selfRef">Figure 12</a>:
+<a href="#name-example-address-translation-" class="selfRef">Example address translation from Ethernet to CAN for multicast frames</a>
+        </figcaption></figure>
+</div>
+<p id="section-7-7"><a href="#fig-unicast-id-translation" class="auto internal xref">Figure 13</a> shows a translation CAN identifier to Ethernet MAC.
+The destination (dest) MAC address is carried inline in the CAN frame data.
+The 34-bit MAC address prefix for this example is 02:00:5E:10 followed by two zero bits,
+written as 02:00:5E:10:00/34.<a href="#section-7-7" class="pilcrow">¶</a></p>
+<span id="name-example-address-translation-f"></span><div id="fig-unicast-id-translation">
+<figure id="figure-13">
+        <div class="alignLeft art-text artwork" id="section-7-8.1">
+<pre>
+ 0|0            1|1            2|
+ 0|1            4|5            8|
++-+--------------+--------------+
+|0|dest (0x3DF0) | src (0x3055) |
++-+--------------+--------------+
+            CAN identifier
+|0                            4|4                             9|
+|0                            7|8                             5|
++------------------------------+-------------------------------+
+| dest MAC (02:00:5E:10:00:FF) |  src MAC (02:00:5E:10:30:55)  |
++------------------------------+-------------------------------+
+                          Ethernet MAC
+</pre>
+</div>
+<figcaption><a href="#figure-13" class="selfRef">Figure 13</a>:
+<a href="#name-example-address-translation-f" class="selfRef">Example address translation from CAN identifier to Ethernet MAC for unicast frames</a>
+        </figcaption></figure>
+</div>
+<span id="name-example-setup-with-ethernet"></span><div id="fig-translator-setup">
+<figure id="figure-14">
+        <div class="alignLeft art-text artwork" id="section-7-9.1">
+<pre>
+                                          +-----+  +-----+
+                                          |CAN  |  |CAN  |  ...
+                                          |node |  |node |
+                                          +--+--+  +--+--+
++--------+---+     +---+----------+---+      |        |
+|        |   |     |   |Ethernet  |   |      |        |
+| Switch |ETH|&lt;---&gt;|ETH|Border    |CAN|------+--------+---- ...
+|        |   |     |   |Translator|   |
++--------+---+     +---+----------+---+
+</pre>
+</div>
+<figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
+<a href="#name-example-setup-with-ethernet" class="selfRef">Example setup with Ethernet Border Translator</a>
+        </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="iana-considerations">
+<section id="section-8">
+      <h2 id="name-iana-considerations">
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-8-1">The IANA considerations for this document have not yet been determined.
+A future revision will specify the registry actions required by this
+document, or state that this document has no IANA actions.<a href="#section-8-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="security-considerations">
+<section id="section-9">
+      <h2 id="name-security-considerations">
+<a href="#section-9" class="section-number selfRef">9. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<p id="section-9-1">This document doesn't provide any security mechanisms.
+Traffic on the bus can be intercepted, spoofed, or destroyed.
+For confidentiality and integrity, mechanisms like TLS or IPsec need to be applied.<a href="#section-9-1" class="pilcrow">¶</a></p>
+<p id="section-9-2">The link-local IID defined in <a href="#addr-conf-sec" class="auto internal xref">Section 5.4</a> is derived from the node address and therefore
+exposes that address in every link-local IPv6 address of the node. Within a bus segment this
+discloses nothing new, because the node address appears in the CAN frame identifier of every
+frame the node sends or receives. It would become a concern if the node address were also
+used to form addresses that are routable beyond the segment: such an address would remain
+stable for as long as the node keeps its node address and would allow the node to be tracked
+across networks, which is what <span>[<a href="#RFC8064" class="cite xref">RFC8064</a>]</span> and <span>[<a href="#RFC7217" class="cite xref">RFC7217</a>]</span> are intended to prevent.
+For this reason the node address is used only for link-local IIDs.<a href="#section-9-2" class="pilcrow">¶</a></p>
+<p id="section-9-3">A 14-bit node address space holds 16384 values and can be scanned exhaustively in a short
+time. The size of the address space therefore provides no protection against discovery of
+the nodes present on a bus segment.<a href="#section-9-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="sec-combined-references">
+<section id="section-10">
+      <h2 id="name-references">
+<a href="#section-10" class="section-number selfRef">10. </a><a href="#name-references" class="section-name selfRef">References</a>
+      </h2>
+<div id="sec-normative-references">
+<section id="section-10.1">
+        <h3 id="name-normative-references">
+<a href="#section-10.1" class="section-number selfRef">10.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+        </h3>
+<dl class="references">
+<dt id="I-D.ietf-6lo-schc-15dot4">[I-D.ietf-6lo-schc-15dot4]</dt>
+        <dd>
+<span class="refAuthor">Gomez, C.</span> and <span class="refAuthor">A. Minaburo</span>, <span class="refTitle">"Transmission of SCHC-compressed packets over IEEE 802.15.4 networks"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-6lo-schc-15dot4-14</span>, <time datetime="2026-10-31" class="refDate">31 October 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-6lo-schc-15dot4-14">https://datatracker.ietf.org/doc/html/draft-ietf-6lo-schc-15dot4-14</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC2464">[RFC2464]</dt>
+        <dd>
+<span class="refAuthor">Crawford, M.</span>, <span class="refTitle">"Transmission of IPv6 Packets over Ethernet Networks"</span>, <span class="seriesInfo">RFC 2464</span>, <span class="seriesInfo">DOI 10.17487/RFC2464</span>, <time datetime="1998-12" class="refDate">December 1998</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2464">https://www.rfc-editor.org/rfc/rfc2464</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC4291">[RFC4291]</dt>
+        <dd>
+<span class="refAuthor">Hinden, R.</span> and <span class="refAuthor">S. Deering</span>, <span class="refTitle">"IP Version 6 Addressing Architecture"</span>, <span class="seriesInfo">RFC 4291</span>, <span class="seriesInfo">DOI 10.17487/RFC4291</span>, <time datetime="2006-02" class="refDate">February 2006</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc4291">https://www.rfc-editor.org/rfc/rfc4291</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC4861">[RFC4861]</dt>
+        <dd>
+<span class="refAuthor">Narten, T.</span>, <span class="refAuthor">Nordmark, E.</span>, <span class="refAuthor">Simpson, W.</span>, and <span class="refAuthor">H. Soliman</span>, <span class="refTitle">"Neighbor Discovery for IP version 6 (IPv6)"</span>, <span class="seriesInfo">RFC 4861</span>, <span class="seriesInfo">DOI 10.17487/RFC4861</span>, <time datetime="2007-09" class="refDate">September 2007</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc4861">https://www.rfc-editor.org/rfc/rfc4861</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC4862">[RFC4862]</dt>
+        <dd>
+<span class="refAuthor">Thomson, S.</span>, <span class="refAuthor">Narten, T.</span>, and <span class="refAuthor">T. Jinmei</span>, <span class="refTitle">"IPv6 Stateless Address Autoconfiguration"</span>, <span class="seriesInfo">RFC 4862</span>, <span class="seriesInfo">DOI 10.17487/RFC4862</span>, <time datetime="2007-09" class="refDate">September 2007</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc4862">https://www.rfc-editor.org/rfc/rfc4862</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC4944">[RFC4944]</dt>
+        <dd>
+<span class="refAuthor">Montenegro, G.</span>, <span class="refAuthor">Kushalnagar, N.</span>, <span class="refAuthor">Hui, J.</span>, and <span class="refAuthor">D. Culler</span>, <span class="refTitle">"Transmission of IPv6 Packets over IEEE 802.15.4 Networks"</span>, <span class="seriesInfo">RFC 4944</span>, <span class="seriesInfo">DOI 10.17487/RFC4944</span>, <time datetime="2007-09" class="refDate">September 2007</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc4944">https://www.rfc-editor.org/rfc/rfc4944</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC6775">[RFC6775]</dt>
+        <dd>
+<span class="refAuthor">Shelby, Z., Ed.</span>, <span class="refAuthor">Chakrabarti, S.</span>, <span class="refAuthor">Nordmark, E.</span>, and <span class="refAuthor">C. Bormann</span>, <span class="refTitle">"Neighbor Discovery Optimization for IPv6 over Low-Power Wireless Personal Area Networks (6LoWPANs)"</span>, <span class="seriesInfo">RFC 6775</span>, <span class="seriesInfo">DOI 10.17487/RFC6775</span>, <time datetime="2012-11" class="refDate">November 2012</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc6775">https://www.rfc-editor.org/rfc/rfc6775</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC7136">[RFC7136]</dt>
+        <dd>
+<span class="refAuthor">Carpenter, B.</span> and <span class="refAuthor">S. Jiang</span>, <span class="refTitle">"Significance of IPv6 Interface Identifiers"</span>, <span class="seriesInfo">RFC 7136</span>, <span class="seriesInfo">DOI 10.17487/RFC7136</span>, <time datetime="2014-02" class="refDate">February 2014</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc7136">https://www.rfc-editor.org/rfc/rfc7136</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC7217">[RFC7217]</dt>
+        <dd>
+<span class="refAuthor">Gont, F.</span>, <span class="refTitle">"A Method for Generating Semantically Opaque Interface Identifiers with IPv6 Stateless Address Autoconfiguration (SLAAC)"</span>, <span class="seriesInfo">RFC 7217</span>, <span class="seriesInfo">DOI 10.17487/RFC7217</span>, <time datetime="2014-04" class="refDate">April 2014</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc7217">https://www.rfc-editor.org/rfc/rfc7217</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8064">[RFC8064]</dt>
+        <dd>
+<span class="refAuthor">Gont, F.</span>, <span class="refAuthor">Cooper, A.</span>, <span class="refAuthor">Thaler, D.</span>, and <span class="refAuthor">W. Liu</span>, <span class="refTitle">"Recommendation on Stable IPv6 Interface Identifiers"</span>, <span class="seriesInfo">RFC 8064</span>, <span class="seriesInfo">DOI 10.17487/RFC8064</span>, <time datetime="2017-02" class="refDate">February 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8064">https://www.rfc-editor.org/rfc/rfc8064</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8200">[RFC8200]</dt>
+        <dd>
+<span class="refAuthor">Deering, S.</span> and <span class="refAuthor">R. Hinden</span>, <span class="refTitle">"Internet Protocol, Version 6 (IPv6) Specification"</span>, <span class="seriesInfo">STD 86</span>, <span class="seriesInfo">RFC 8200</span>, <span class="seriesInfo">DOI 10.17487/RFC8200</span>, <time datetime="2017-07" class="refDate">July 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8200">https://www.rfc-editor.org/rfc/rfc8200</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8505">[RFC8505]</dt>
+        <dd>
+<span class="refAuthor">Thubert, P., Ed.</span>, <span class="refAuthor">Nordmark, E.</span>, <span class="refAuthor">Chakrabarti, S.</span>, and <span class="refAuthor">C. Perkins</span>, <span class="refTitle">"Registration Extensions for IPv6 over Low-Power Wireless Personal Area Network (6LoWPAN) Neighbor Discovery"</span>, <span class="seriesInfo">RFC 8505</span>, <span class="seriesInfo">DOI 10.17487/RFC8505</span>, <time datetime="2018-11" class="refDate">November 2018</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8505">https://www.rfc-editor.org/rfc/rfc8505</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8724">[RFC8724]</dt>
+      <dd>
+<span class="refAuthor">Minaburo, A.</span>, <span class="refAuthor">Toutain, L.</span>, <span class="refAuthor">Gomez, C.</span>, <span class="refAuthor">Barthel, D.</span>, and <span class="refAuthor">JC. Zuniga</span>, <span class="refTitle">"SCHC: Generic Framework for Static Context Header Compression and Fragmentation"</span>, <span class="seriesInfo">RFC 8724</span>, <span class="seriesInfo">DOI 10.17487/RFC8724</span>, <time datetime="2020-04" class="refDate">April 2020</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8724">https://www.rfc-editor.org/rfc/rfc8724</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="sec-informative-references">
+<section id="section-10.2">
+        <h3 id="name-informative-references">
+<a href="#section-10.2" class="section-number selfRef">10.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+        </h3>
+<dl class="references">
+<dt id="I-D.wachter-6lo-can">[I-D.wachter-6lo-can]</dt>
+        <dd>
+<span class="refAuthor">Wachter, A.</span>, <span class="refTitle">"IPv6 over Controller Area Network"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-wachter-6lo-can-01</span>, <time datetime="2020-02-27" class="refDate">27 February 2020</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-wachter-6lo-can-01">https://datatracker.ietf.org/doc/html/draft-wachter-6lo-can-01</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="ISO11898-1">[ISO11898-1]</dt>
+        <dd>
+<span class="refAuthor">ISO</span>, <span class="refTitle">"Road vehicles — Controller area network (CAN) Part 1: Data link layer and physical coding sublayer"</span>, <span class="seriesInfo">ISO Std 11898-1:2024</span>, <time datetime="2024-05" class="refDate">May 2024</time>, <span>&lt;<a href="https://www.iso.org/standard/86384.html">https://www.iso.org/standard/86384.html</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="ISO11898-2">[ISO11898-2]</dt>
+        <dd>
+<span class="refAuthor">ISO</span>, <span class="refTitle">"Road vehicles — Controller area network (CAN) Part 2: High-speed physical medium attachment (PMA) sublayer"</span>, <span class="seriesInfo">ISO Std 11898-2:2024</span>, <time datetime="2024-03" class="refDate">March 2024</time>, <span>&lt;<a href="https://www.iso.org/standard/85120.html">https://www.iso.org/standard/85120.html</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="ISO15765-2">[ISO15765-2]</dt>
+        <dd>
+<span class="refAuthor">ISO</span>, <span class="refTitle">"Road vehicles — Diagnostic communication over Controller Area Network (DoCAN) Part 2: Transport protocol and network layer services"</span>, <span class="seriesInfo">ISO Std 15765-2:2024</span>, <time datetime="2024-04" class="refDate">April 2024</time>, <span>&lt;<a href="https://www.iso.org/standard/84211.html">https://www.iso.org/standard/84211.html</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC2119">[RFC2119]</dt>
+        <dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC4919">[RFC4919]</dt>
+        <dd>
+<span class="refAuthor">Kushalnagar, N.</span>, <span class="refAuthor">Montenegro, G.</span>, and <span class="refAuthor">C. Schumacher</span>, <span class="refTitle">"IPv6 over Low-Power Wireless Personal Area Networks (6LoWPANs): Overview, Assumptions, Problem Statement, and Goals"</span>, <span class="seriesInfo">RFC 4919</span>, <span class="seriesInfo">DOI 10.17487/RFC4919</span>, <time datetime="2007-08" class="refDate">August 2007</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc4919">https://www.rfc-editor.org/rfc/rfc4919</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC6282">[RFC6282]</dt>
+        <dd>
+<span class="refAuthor">Hui, J., Ed.</span> and <span class="refAuthor">P. Thubert</span>, <span class="refTitle">"Compression Format for IPv6 Datagrams over IEEE 802.15.4-Based Networks"</span>, <span class="seriesInfo">RFC 6282</span>, <span class="seriesInfo">DOI 10.17487/RFC6282</span>, <time datetime="2011-09" class="refDate">September 2011</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc6282">https://www.rfc-editor.org/rfc/rfc6282</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8174">[RFC8174]</dt>
+      <dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+</section>
+</div>
+<div id="acknowledgements">
+<section id="appendix-A">
+      <h2 id="name-acknowledgements">
+<a href="#name-acknowledgements" class="section-name selfRef">Acknowledgements</a>
+      </h2>
+<p id="appendix-A-1">This document is based on <span>[<a href="#I-D.wachter-6lo-can" class="cite xref">I-D.wachter-6lo-can</a>]</span>, an earlier Internet-Draft
+authored by Alexander Wachter.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="changes-from-draft-pjs-6lo-can-00">
+<section id="appendix-B">
+      <h2 id="name-changes-from-draft-pjs-6lo-">
+<a href="#name-changes-from-draft-pjs-6lo-" class="section-name selfRef">Changes from draft-pjs-6lo-can-00</a>
+      </h2>
+<p id="appendix-B-1">This section is to be removed before publication as an RFC.<a href="#appendix-B-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="appendix-B-2.1">
+          <p id="appendix-B-2.1.1">Header compression changed from the 6LoWPAN header compression of <span>[<a href="#RFC6282" class="cite xref">RFC6282</a>]</span> to SCHC
+<span>[<a href="#RFC8724" class="cite xref">RFC8724</a>]</span>. The section on 6LoWPAN header compression, which was empty, has been removed,
+and <a href="#hc-sec" class="auto internal xref">Section 5.7</a> now specifies the use of SCHC, the provisioning of the context and the Rule
+ID size. <span>[<a href="#RFC6282" class="cite xref">RFC6282</a>]</span> has become an informative reference.<a href="#appendix-B-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="appendix-B-2.2">
+          <p id="appendix-B-2.2.1">Only the compression part of SCHC is used. <a href="#FAR-sec" class="auto internal xref">Section 5.9</a> now states why ISO-TP rather than the
+SCHC fragmentation and reassembly mechanism provides fragmentation.<a href="#appendix-B-2.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="appendix-B-2.3">
+          <p id="appendix-B-2.3.1"><a href="#sec-frame-format" class="auto internal xref">Section 5.11</a> replaces the dispatch and LOWPAN_IPHC fields with the SCHC Rule ID and
+compression residue.<a href="#appendix-B-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="appendix-B-2.4">
+          <p id="appendix-B-2.4.1"><a href="#addr-conf-sec" class="auto internal xref">Section 5.4</a> now justifies the node-address-derived interface identifier with the SCHC
+DEVIID and APPIID actions instead of with <span>[<a href="#RFC6282" class="cite xref">RFC6282</a>]</span> elision.<a href="#appendix-B-2.4.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="appendix-B-2.5">
+          <p id="appendix-B-2.5.1">The CAN FD frame format is now required; see <a href="#can-fd-sec" class="auto internal xref">Section 5.1</a>.<a href="#appendix-B-2.5.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="appendix-B-2.6">
+          <p id="appendix-B-2.6.1">The LLDAD no longer uses remote frames. LLDAD-requests and DAD-responses are frames with a
+data length of zero, which is unambiguous because a 6LoCAN packet always starts with an
+ISO-TP header. Retry behaviour, the handling of two nodes probing the same address at the
+same time, and the origin of the 100 ms timer are now specified; see
+<a href="#link-layer-duplicate-address-detection" class="auto internal xref">Section 5.3.4</a>.<a href="#appendix-B-2.6.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="appendix-B-2.7">
+          <p id="appendix-B-2.7.1">The affiliation of the first author has been removed.<a href="#appendix-B-2.7.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="appendix-C">
+      <h2 id="name-authors-addresses">
+<a href="#name-authors-addresses" class="section-name selfRef">Authors' Addresses</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Alexander Wachter</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:alexander@wachter.cloud" class="email">alexander@wachter.cloud</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Jungsoo Park (<span class="role">editor</span>)</span></div>
+<div dir="auto" class="left"><span class="org">Electronics and Telecommunications Research Institute</span></div>
+<div dir="auto" class="left"><span class="street-address">218 Gajeongno, Yuseong-gu</span></div>
+<div dir="auto" class="left"><span class="locality">Daejeon</span></div>
+<div dir="auto" class="left"><span class="postal-code">34129</span></div>
+<div dir="auto" class="left"><span class="country-name">South Korea</span></div>
+<div class="tel">
+<span>Phone:</span>
+<a href="tel:+82%2042%20860%206514" class="tel">+82 42 860 6514</a>
+</div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:pjs@etri.re.kr" class="email">pjs@etri.re.kr</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+</body>
+</html>
