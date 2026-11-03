@@ -53,6 +53,7 @@ normative:
   RFC7136:
   RFC7217:
   RFC8064:
+  RFC8065:
   RFC8200:
   RFC8505:
   RFC8724:
@@ -103,10 +104,12 @@ This document describes how to transfer IPv6 packets over CAN using ISO-TP, a de
 Controller Area Network (CAN) is mostly known for its use in the automotive domain.
 However, it is also used in industrial applications as CANopen, building automation and many more.
 
-It is a two-wire wired-AND multi-master bus that uses CSMA/CR in its arbitration field.
+It is a two-wire, wired-AND, multi-master bus that uses Carrier Sense Multiple Access with
+Collision Resolution (CSMA/CR) in its arbitration field.
 CAN uses 11-bit (standard ID) and 29-bit (extended ID) identifiers to identify frames.
 The arbitration field also incorporates a Remote Transmission Request (RTR), marking a frame as an RTR-frame.
-The maximum payload data size is 8 octets for classical CAN and 64 octets for CAN-FD.
+The maximum payload data size is 8 octets for classical CAN and 64 octets for CAN with
+Flexible Data-Rate (CAN FD).
 
 The minimal MTU of IPv6 is 1280 octets, and therefore, a mechanism to support a larger payload is needed.
 This document uses a slightly modified version of the ISO-TP protocol ({{ISO15765-2}}) to transfer data up to 4095 octets per packet.
@@ -460,9 +463,11 @@ which costs 8 octets in every packet that carries it. On a link whose frames car
 uncompressed one.
 
 {{RFC8064}} recommends that stable IIDs be generated with the method of {{RFC7217}} rather
-than from a link-layer address. The link-local IID defined above is a deliberate deviation
-from that recommendation, made for the header compression reason given above; its privacy
-properties are discussed in {{security-considerations}}.
+than from a link-layer address, and {{RFC8065}} gives the privacy advice that an
+adaptation-layer specification such as this one is expected to follow. The link-local IID
+defined above is a deliberate deviation from that recommendation, made for the header
+compression reason given above; its privacy properties are discussed in
+{{security-considerations}}.
 For addresses other than link-local addresses, a 6LoCAN node SHOULD generate IIDs as
 described in {{RFC7217}}. Such IIDs cannot be rebuilt with DEVIID or APPIID and are carried
 as part of the compression residue.
@@ -629,7 +634,7 @@ Source/Target Link-Layer Address option is not used for one.
 Because the CAN data link layer does not provide multicast, ISO-TP is used for multicast
 frames without its flow control mechanism; see {{iso-tp-overview}} and {{FAR-sec}}.
 
-## Frame Format {#sec-frame-format}
+## 6LoCAN Frame Format {#sec-frame-format}
 
 This section provides information about data arrangement in the frame data field.
 
@@ -795,8 +800,11 @@ document, or state that this document has no IANA actions.
 
 # Security Considerations {#security-considerations}
 
-This document doesn't provide any security mechanisms.
-Traffic on the bus can be intercepted, spoofed, or destroyed.
+CAN itself provides no security services at the link layer: it has no authentication, no
+integrity protection and no confidentiality, and any node on the bus can transmit any frame
+identifier. This document adds none.
+Traffic on the bus can therefore be intercepted, spoofed, or destroyed by any node attached
+to the segment.
 For confidentiality and integrity, mechanisms like TLS or IPsec need to be applied.
 
 The link-local IID defined in {{addr-conf-sec}} is derived from the node address and therefore
@@ -811,6 +819,12 @@ For this reason the node address is used only for link-local IIDs.
 A 14-bit node address space holds 16384 values and can be scanned exhaustively in a short
 time. The size of the address space therefore provides no protection against discovery of
 the nodes present on a bus segment.
+
+{{RFC8065}} discusses how privacy threats apply to IPv6-over-foo adaptation layers and what
+such a specification is expected to say about them. Of the threats it lists, correlation of
+activity over time and location tracking are the ones that the node-address-derived
+interface identifier of {{addr-conf-sec}} bears on, and they are the reason that identifier
+is confined to link-local addresses. Address scanning is not mitigated, as noted above.
 
 
 --- back
@@ -843,3 +857,8 @@ This section is to be removed before publication as an RFC.
   same time, and the origin of the 100 ms timer are now specified; see
   {{link-layer-duplicate-address-detection}}.
 * The affiliation of the first author has been removed.
+* Comments from the review of draft-wachter-6lo-can-01 on the 6lo list have been
+  addressed: {{RFC8065}} is now taken into account in {{addr-conf-sec}} and
+  {{security-considerations}}, {{security-considerations}} now states that CAN provides no
+  security services at the link layer, {{sec-frame-format}} has been renamed, and the
+  CSMA/CR and CAN FD abbreviations are now expanded on first use.
