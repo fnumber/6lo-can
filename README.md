@@ -31,6 +31,12 @@ name including the revision number.
 | [`draft-pjs-6lo-can-00`](https://fnumber.github.io/6lo-can/draft-pjs-6lo-can-00/) | Posted 2 November 2026 | Submitted before the IETF 127 cut-off |
 | `draft-pjs-6lo-can-01` | In progress on `main` | SCHC replaces IPHC; CAN FD required; remote frames removed from the LLDAD |
 
+## Earlier record
+
+This document continues draft-wachter-6lo-can, which was presented at IETF 106 and
+reviewed on the 6lo list in 2020. Those materials and a disposition of the review are
+in [`history/`](history/).
+
 ## Contributing
 
 See the
