@@ -1,0 +1,162 @@
+6lo WG Agenda - IETF 106, Singapore
+      13:30-15:00 @Sophia
+      Wednesday, November 20, 2019
+      Chairs: Shwetha Bhandari, Carles Gomez
+      Responsible AD: Suresh Krishnan 
+  --------------------------------------------------------------
+  Agenda
+  Introduction and draft status                                Bhandari/Gomez            15 min
+  Agenda bashing; blue sheets; scribe; Jabber scribe
+
+  INTDIR review of 6LoWPAN fragment forwarding                       Pascal Thubert                  5 min
+    https://tools.ietf.org/html/draft-ietf-6lo-minimal-fragment-04
+
+  Update after shepherd review - IPv6 mesh over BLE               Carles Gomez                  5 min        
+    https://tools.ietf.org/html/draft-ietf-6lo-blemesh-06
+
+  Update of Applicability and Use Cases draft                         Yong-Geun Hong            10 min
+    https://tools.ietf.org/html/draft-ietf-6lo-use-cases-08 
+
+  Update of IPv6 over PLC draft                                       Liu Bing (Remy)           10 min
+    https://tools.ietf.org/html/draft-ietf-6lo-plc-01
+
+  New draft - IPv6 over Controller Area Network                       Alexander Wachter         10 min
+    https://tools.ietf.org/html/draft-wachter-6lo-can-00
+
+  New draft - Comparison of 6lo and SCHC                       Laurent Toutain                 10 min
+    https://tools.ietf.org/html/draft-toutain-6lo-6lo-and-schc-00 
+
+  Asymmetric IPv6 for IoT Networks                             Guangpeng Li                 10 min 
+    https://tools.ietf.org/html/draft-jiang-asymmetric-ipv6-02
+
+
+  --------------------------------------------------------------
+Meeting notes
+
+[13:32]
+  Introduction and draft status                                Bhandari/Gomez            10 min
+  Note Well is shown
+  Agenda bashing: 5mn transferred from intro to fragment forwarding. No objection.
+  Blue sheets; scribe (Dominique+Pascal); Jabber scribe (Georgios)
+https://datatracker.ietf.org/meeting/106/materials/slides-106-6lo-chairs-introduction-6loietf106-00
+  WG drafts status
+  IPv6 over NFC: 3 DISCUSSes, authors responded, no update from IESG
+  Suresh: math error in deadline time, waiting for authors.
+  Suresh: main issue is tone of document.
+  Suresh: Address Protected ND, finished AD review, will send shortly. Went through IEEE did not get feedback, took 3 months. Now ready to move on.
+  Suresh: will take care of the next three documents next.
+  6lo Use Cases: got review by Pascal.
+  Suresh: glad there is feedback. Still not sure enough critical to take it through.
+
+[13:42]
+  INTDIR review of 6LoWPAN fragment forwarding                       Pascal Thubert                  10 min
+    https://tools.ietf.org/html/draft-ietf-6lo-minimal-fragment-04
+https://datatracker.ietf.org/meeting/106/materials/slides-106-6lo-6lo-fragmentation-00
+  minimal-fragment and fragment-recovery drafts. Passed WG LC.
+  Pascal goes over Dave Thaler's review. Discussion about is the draft normative.
+   Text introduces behaviour with uppercase that is generic to any FF solution, be it VRB or recovereable fragments. Also discusses pitfalls such as found with Rahul's experiments.
+   No more a simple description of the Virtual Reassembly Buffer technique.
+  Suresh: I think its normative.
+  Pascal: will add BCP14 text.
+  Another comment is hitting Hop Limit while fragmented, how is it reported to the source, which source? If send ICMP packet to origin source with
+  reconstructed packet, loose all info on cause for the problem (if pb occurred with fragments). 
+  Should 6lo, independent from this work, document ICMP handling behaviour in hc scenarios?
+  Discussion on what proper response should be to the situation described.
+
+[13:52]
+  Update after shepherd review - IPv6 mesh over BLE               Carles Gomez                  5 min        
+    https://tools.ietf.org/html/draft-ietf-6lo-blemesh-06
+https://datatracker.ietf.org/meeting/106/materials/slides-106-6lo-ipv6-mesh-over-ble-links-00
+  Review by Rahul (thanks!) updates are expressed in the slides.
+  found ARO in the document, changed to EARO
+
+    add some diagrams for node joining procedure
+
+    No questions or comments in the room.
+
+
+[13:55]
+  Update of Applicability and Use Cases draft                         Yong-Geun Hong            10 min
+    https://tools.ietf.org/html/draft-ietf-6lo-use-cases-08 
+  https://datatracker.ietf.org/meeting/106/materials/slides-106-6lo-6lo-applicability-and-use-cases-00
+  -08 updated to reflect Pascal's comments.
+  Description of IEEE 802.15.4e technology no longer in doc.
+  Deployment scenarios: only 2 left in document.
+   Discussion congruent with slides. Selection of 6lo technologies, which to focus on. Dropped ah for lack of activity at 6lo
+   see slides fo discussion between authors. Added text on address assignment, refer to RFC 6775/8505.
+  LPWAN technologies out of scope.
+  Asking comments regarding the set of technologies and deployment scenarios currently in the draft.
+  Pascal: JupiterMesh is out of scope simply because it's dead. WiSUN is alive and well. Why is it not in scope? At least say it is deployed.
+  Pascal: 15.4e should not be mentioned anymore, has been rolled into 15.4-2015. 
+  Since we do not mention the year in the reference of IEEE std 802.15.4, 4e is implicitly included without mentioning.
+  Suresh: understand that the draft does not describe link technologies, just reference them.
+  Shwetha: we'll continue to add to the draft, since we'll be getting more usecases from say 6lo over CAN, not going for WGLC. 
+
+[14:08]
+  Update of IPv6 over PLC draft                                       Liu Bing (Remy)           10 min
+    https://tools.ietf.org/html/draft-ietf-6lo-plc-01
+    https://datatracker.ietf.org/meeting/106/materials/slides-106-6lo-ipv6-over-plc-00
+  Ask the WG opinion. Shall this draft resolve inconsistency before G9903 PLC and RFC8066 (order of headers)?
+  Pascal: if memory serves, agreed with ITU people on this. Why is there an inconsistency now? The ITU-T people were here at the time.
+  Remy:
+  Pascal: check if they reference 8066, they should not redefine its content.
+  Suresh: I don't think we can resolve this here. The ITU-T needs to fix this. This draft needs to be consistent with the IETF docs, namely RFCs.
+  Suresh: if you have contacts at or colleagues going to ITU-T, tell them to fix this.
+  Carles : "Regarding the order of the command frame header, the inconsistency between G.9903 and RFC8066 still exists and is being solved in ITU-T SG15/Q15." Isn't this true?
+  Suresh: let's chat about this offline.
+  Remy: this issue is just with G3 PLC. Other PLCs are ok.
+  Carles: who's willing to review? Laurent.
+
+[14:20]
+  New draft - Comparison of 6lo and SCHC                       Laurent Toutain                 10 min
+    https://tools.ietf.org/html/draft-toutain-6lo-6lo-and-schc-00 
+  https://datatracker.ietf.org/meeting/106/materials/slides-106-6lo-comparison-of-6lo-and-schc-00
+  Goal is to describe work done at LPWAN WG, for educational purposes.
+  Laurent presents how the two use cases differ, e.g., bandwidth. Then characterises LPWAN as hub and spoke, star topology
+  Key is that the kind of traffic that a constrained device generates is very limited and known in advance.
+  Laurent explains the working of SCHC rules. Then compares the technology
+  1) stateless vs. Stateful. Both technologies are stateless, packet-wise. There is no state kept from one packet to the next.
+   2) The compression in 6lo depends on the RFC, the one in SCHC repends on the rules
+  Remy: how to install "disctionnary" into intermediate nodes of mesh netwrok?
+  Carles: SCHC could be viewed as superset of 6LoWPAN compression. IPv6/UDP headers can be compressed down to 6-7 bytes with 6LoWPAN/6Lo, while with SCHC it is down to 1-2 bytes.
+  Carles: a subset of 6LoWPAN scenarios might benefit from SCHC
+  Shwetha: question to the room: do you see situations where 6lo mesh networks would benefit from distributing compression context into nodes?
+  Carsten: both 6lo and SCHC have contexts. In 6lo, only a few addresses. SCHC has extensive mechanism. In SCHC, assumption is provisioning per peers/pair, in 6lo per network.
+  Carsten: if we did 6lo per pair, would feel different. If SCHC with network distribution, would feel different. Number of combinations to explore.
+  Carsten: main question is how you distribute this context.
+  Pascal: question of backward compatibility. One way of using SCHC in 6lo scope is leaving IP compression to 6lo but upgrade end points to do Next Header compression to SCHC. Could SCHC-compress the upper layers and transport over 6lo-compressed IP.
+  Pascal: context management protocol is CoAP. SCHC is useful to compress CoAP, at the least.
+
+[14:42]
+  New draft - IPv6 over Controller Area Network                       Alexander Wachter         10 min
+    https://tools.ietf.org/html/draft-wachter-6lo-can-00
+    https://datatracker.ietf.org/meeting/106/materials/slides-106-6lo-ipv6-over-can-6locan-01
+  CANbus not encrypted, hence interest for TLS.
+  Draft creates node address 40 bits.
+  Shwetha: Q&A deferred to mailing list because short on time.
+
+[14:49]
+  Asymmetric IPv6 for IoT Networks                             Guangpeng Li                 10 min 
+    https://tools.ietf.org/html/draft-jiang-asymmetric-ipv6-02
+    https://datatracker.ietf.org/meeting/106/materials/slides-106-6lo-asymmetric-ipv6-for-iot-networks-update-00
+  IPv6 Header compression for "asymmetric/compressed" networks.
+  Comparison to SCHC: SCHC has static context, AsymIPv6 (this proposal) has coding bits included in the compressed paackets.
+  Laurent: in 6lo, static as well.
+  Guangeng Li: our bitmap is similar to SCHC's RuleID. But ..
+  Carles: in new version of document, there is comparison with SCHC, but not with 6LoWPAN/6lo.
+  GL: in our proposal, short address is real address. No need to decompress/recompress at every hop.
+  How to ...?
+  Shwetha: please add section on advantages over existing 6LoWPAN/6lo HC?
+
+[14:56]
+  Carles: regarding 6loCAN, comments? Anybody willing to review?
+  Pascal: seems SCHC would make sense for the 6loCAN case.
+  Alexander: 
+  Pascal: considering your constraints (payload, etc.), SCHC seems appropriate.
+  Carles: is ISO-TP the native fragmentation mechanism for 6LoCAN?
+  Alexander: ISO-TP has 1 byte header, flow control. Already there for a long time.
+  Carles: in the IETF there is the work produced by the LPWAN WG called SCHC, which includes fragmentation functionality. 
+          This fragmentation offers three different approaches, including flow control, and has also been designed for technologies with very small L2 MTU.
+
+[14:59] session adjourns                                                                  
+Total: 75 min  
