@@ -3,10 +3,11 @@
 This is the working area for the individual Internet-Draft, "Transmission of IPv6
 Packets over Controller Area Network" (6LoCAN).
 
-* [Editor's Copy](https://fnumber.github.io/6lo-can/#go.draft-pjs-6lo-can.html)
+* [Editor's Copy](https://fnumber.github.io/6lo-can/draft-pjs-6lo-can.html)
+  ([plain text](https://fnumber.github.io/6lo-can/draft-pjs-6lo-can.txt))
 * [Datatracker Page](https://datatracker.ietf.org/doc/draft-pjs-6lo-can)
-* [Individual Draft](https://datatracker.ietf.org/doc/html/draft-pjs-6lo-can)
-* [Compare Editor's Copy to Individual Draft](https://fnumber.github.io/6lo-can/#go.draft-pjs-6lo-can.diff)
+* [Compare Editor's Copy to the posted draft](https://author-tools.ietf.org/api/iddiff?doc_1=draft-pjs-6lo-can&url_2=https://fnumber.github.io/6lo-can/draft-pjs-6lo-can.txt)
+* [Open issues](https://github.com/fnumber/6lo-can/issues)
 
 ## About
 
@@ -27,7 +28,7 @@ name including the revision number.
 
 | Version | Status | Notes |
 |---|---|---|
-| `draft-pjs-6lo-can-00` | Posted 2 November 2026 | Submitted before the IETF 127 cut-off |
+| [`draft-pjs-6lo-can-00`](https://fnumber.github.io/6lo-can/draft-pjs-6lo-can-00/) | Posted 2 November 2026 | Submitted before the IETF 127 cut-off |
 | `draft-pjs-6lo-can-01` | In progress on `main` | SCHC replaces IPHC; CAN FD required; remote frames removed from the LLDAD |
 
 ## Contributing
